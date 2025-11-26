@@ -1,16 +1,24 @@
 import React, { useState, useEffect } from 'react';
-import { DollarSign, CheckCircle, AlertTriangle, ArrowRight, Download, Home, FileText, BadgeCheck, Clock, ShieldCheck, Mail } from 'lucide-react';
+import { DollarSign, CheckCircle, AlertTriangle, ArrowRight, Download, Home, FileText, BadgeCheck, Clock, ShieldCheck, Mail, BarChart3 } from 'lucide-react';
 import { SettlementResponse, InvoiceAnalysisResponse } from '../types';
 import { settlementResponses } from '../data/dummyData';
 import { getRandomItem, formatCurrency, wait } from '../utils/helpers';
 import AIAutomationBanner from './AIAutomationBanner';
+import Confetti from './Confetti';
+import useCountUp from '../hooks/useCountUp';
 
 interface Step4Props {
   onComplete: () => void;
   invoiceData: InvoiceAnalysisResponse | null;
+  onCompareClick?: () => void;
 }
 
-const Step4_Settlement: React.FC<Step4Props> = ({ onComplete, invoiceData }) => {
+const AnimatedNumber = ({ value, prefix = '' }: { value: number, prefix?: string }) => {
+    const animatedValue = useCountUp(value, 1500);
+    return <span>{prefix}{animatedValue.toLocaleString()}</span>;
+}
+
+const Step4_Settlement: React.FC<Step4Props> = ({ onComplete, invoiceData, onCompareClick }) => {
   const [data, setData] = useState<SettlementResponse | null>(null);
   const [isApproved, setIsApproved] = useState(false);
   const [checks, setChecks] = useState({
@@ -47,17 +55,24 @@ const Step4_Settlement: React.FC<Step4Props> = ({ onComplete, invoiceData }) => 
 
   if (isApproved) {
     return (
-      <div className="max-w-2xl mx-auto pt-8 text-center space-y-8 animate-[fadeIn_0.5s_ease] pb-20">
-        <div className="w-20 h-20 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-4 shadow-green-200/50 shadow-lg ring-4 ring-green-50 dark:ring-green-900/10">
-          <CheckCircle className="w-10 h-10 text-green-600 dark:text-green-400" />
+      <div className="max-w-2xl mx-auto pt-8 text-center space-y-8 animate-[fadeIn_0.5s_ease] pb-20 relative">
+        <Confetti />
+        
+        <div className="w-20 h-20 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-4 shadow-green-200/50 shadow-lg ring-4 ring-green-50 dark:ring-green-900/10 animate-[popIn_0.5s_ease_0.2s_both]">
+          <div className="w-20 h-20">
+            <svg className="w-full h-full" viewBox="0 0 52 52">
+                <circle className="stroke-green-500" strokeWidth="2" strokeDasharray="166" strokeDashoffset="166" fill="none" cx="26" cy="26" r="25" style={{ animation: 'stroke 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards' }} />
+                <path className="stroke-green-500" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" strokeDasharray="48" strokeDashoffset="48" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8" style={{ animation: 'stroke 0.3s cubic-bezier(0.65, 0, 0.45, 1) 0.6s forwards' }} />
+            </svg>
+          </div>
         </div>
         
         <div>
-          <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Claim Settled Successfully</h2>
-          <p className="text-gray-500 dark:text-gray-400">Claim <span className="font-mono text-gray-700 dark:text-gray-300">#CLM-{invoiceData?.invoiceId ? '2024-1024' : Math.floor(Math.random()*10000)}</span> has been closed.</p>
+          <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2 animate-[fadeIn_0.5s_ease_0.8s_both]">Claim Settled Successfully</h2>
+          <p className="text-gray-500 dark:text-gray-400 animate-[fadeIn_0.5s_ease_1s_both]">Claim <span className="font-mono text-gray-700 dark:text-gray-300">#CLM-{invoiceData?.invoiceId ? '2024-1024' : Math.floor(Math.random()*10000)}</span> has been closed.</p>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 rounded-2xl p-0 shadow-xl border border-gray-100 dark:border-gray-700 overflow-hidden text-left">
+        <div className="glass-card rounded-2xl p-0 shadow-xl overflow-hidden text-left animate-[slideUp_0.5s_ease_1.2s_both]">
           <div className="bg-gray-50 dark:bg-gray-900/50 p-6 border-b border-gray-100 dark:border-gray-700">
              <div className="flex justify-between items-center">
                 <span className="text-sm font-bold text-gray-500 uppercase tracking-wider">Settlement Summary</span>
@@ -67,7 +82,7 @@ const Step4_Settlement: React.FC<Step4Props> = ({ onComplete, invoiceData }) => 
           <div className="p-6 space-y-4">
              <div className="flex justify-between items-center py-2 border-b border-gray-100 dark:border-gray-700">
                <span className="text-gray-600 dark:text-gray-300">Settlement Amount</span>
-               <span className="text-xl font-bold text-green-600 dark:text-green-400">{formatCurrency(data.recommendedPayout)}</span>
+               <span className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-green-600 to-emerald-600"><AnimatedNumber value={data.recommendedPayout} prefix="$" /></span>
              </div>
              <div className="flex justify-between items-center py-2 border-b border-gray-100 dark:border-gray-700">
                <span className="text-gray-600 dark:text-gray-300">Paid To</span>
@@ -90,7 +105,7 @@ const Step4_Settlement: React.FC<Step4Props> = ({ onComplete, invoiceData }) => 
           </div>
         </div>
 
-        <div className="flex justify-center space-x-4">
+        <div className="flex justify-center space-x-4 animate-[fadeIn_0.5s_ease_1.5s_both]">
           <button className="flex items-center px-6 py-3 rounded-xl border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-gray-700 dark:text-gray-200 font-medium">
             <Download className="w-5 h-5 mr-2" /> Download Report
           </button>
@@ -142,18 +157,28 @@ const Step4_Settlement: React.FC<Step4Props> = ({ onComplete, invoiceData }) => 
         </div>
       </div>
 
-      {/* Settlement Breakdown */}
-      <div className="hover-card bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm overflow-hidden">
+      {/* Settlement Breakdown - Glassmorphism */}
+      <div className="glass-card rounded-2xl shadow-sm overflow-hidden">
         <div className="p-4 border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 flex justify-between items-center">
           <h3 className="font-bold text-gray-900 dark:text-white flex items-center">
             <DollarSign className="w-5 h-5 mr-2 text-brand-500" />
             Settlement Breakdown
           </h3>
-          {invoiceData && (
-             <span className="text-xs bg-brand-100 text-brand-700 dark:bg-brand-900/30 dark:text-brand-300 px-2 py-1 rounded-full font-medium">
-               Source: Invoice Analysis
-             </span>
-          )}
+          <div className="flex gap-2">
+            {onCompareClick && (
+                <button 
+                 onClick={onCompareClick}
+                 className="text-xs bg-brand-100 text-brand-700 dark:bg-brand-900/30 dark:text-brand-300 px-3 py-1 rounded-full font-bold hover:bg-brand-200 transition-colors flex items-center"
+                >
+                    <BarChart3 size={12} className="mr-1"/> Compare
+                </button>
+            )}
+            {invoiceData && (
+                <span className="text-xs bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300 px-2 py-1 rounded-full font-medium">
+                Source: Invoice Analysis
+                </span>
+            )}
+          </div>
         </div>
         
         <div className="p-6">
@@ -162,7 +187,7 @@ const Step4_Settlement: React.FC<Step4Props> = ({ onComplete, invoiceData }) => 
              <div className="space-y-6">
                <div className="flex justify-between items-center text-lg">
                  <span className="font-medium text-gray-700 dark:text-gray-300">Total Repair Cost</span>
-                 <span className="font-bold text-gray-900 dark:text-white">{formatCurrency(invoiceData.totals.totalBilled)}</span>
+                 <span className="font-bold text-gray-900 dark:text-white"><AnimatedNumber value={invoiceData.totals.totalBilled} prefix="$" /></span>
                </div>
                
                <div className="border-t border-b border-gray-100 dark:border-gray-700 py-4 space-y-2">
@@ -183,11 +208,11 @@ const Step4_Settlement: React.FC<Step4Props> = ({ onComplete, invoiceData }) => 
                <div className="grid grid-cols-2 gap-4">
                  <div className="bg-red-50 dark:bg-red-900/20 p-4 rounded-xl text-center border border-red-100 dark:border-red-900/30">
                    <p className="text-xs font-bold text-red-600 dark:text-red-400 uppercase mb-1">Customer Pays</p>
-                   <p className="text-xl font-bold text-gray-900 dark:text-white">{formatCurrency(invoiceData.totals.customerPays)}</p>
+                   <p className="text-xl font-bold text-gray-900 dark:text-white"><AnimatedNumber value={invoiceData.totals.customerPays} prefix="$" /></p>
                  </div>
                  <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-xl text-center border border-green-100 dark:border-green-900/30 ring-2 ring-green-500/20">
                    <p className="text-xs font-bold text-green-600 dark:text-green-400 uppercase mb-1">Insurance Pays</p>
-                   <p className="text-xl font-bold text-gray-900 dark:text-white">{formatCurrency(invoiceData.totals.insurerPays)}</p>
+                   <p className="text-xl font-bold text-gray-900 dark:text-white"><AnimatedNumber value={invoiceData.totals.insurerPays} prefix="$" /></p>
                  </div>
                </div>
              </div>
@@ -204,7 +229,7 @@ const Step4_Settlement: React.FC<Step4Props> = ({ onComplete, invoiceData }) => 
                ))}
                <div className="border-t border-gray-100 dark:border-gray-700 my-4 pt-4 flex justify-between items-center">
                  <span className="font-bold text-lg text-gray-900 dark:text-white">Net Settlement</span>
-                 <span className="font-bold text-xl text-green-600 dark:text-green-400">{formatCurrency(data.recommendedPayout)}</span>
+                 <span className="font-bold text-xl text-green-600 dark:text-green-400"><AnimatedNumber value={data.recommendedPayout} prefix="$" /></span>
                </div>
              </div>
            )}
@@ -212,7 +237,7 @@ const Step4_Settlement: React.FC<Step4Props> = ({ onComplete, invoiceData }) => 
       </div>
 
       {/* Authorization Section */}
-      <div className="hover-card bg-white dark:bg-gray-800 rounded-2xl p-6 border border-brand-200 dark:border-brand-900 shadow-md">
+      <div className="glass-card p-6 border border-brand-200 dark:border-brand-900 shadow-md">
          <h3 className="text-sm font-bold uppercase tracking-wider text-brand-600 dark:text-brand-400 mb-4 flex items-center">
            <BadgeCheck size={16} className="mr-2"/> Authorization
          </h3>

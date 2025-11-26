@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Car, Moon, Sun, Bell } from 'lucide-react';
 import { useTheme } from './ThemeContext';
 import Stepper from './components/Stepper';
@@ -7,9 +6,12 @@ import Step1_FNOL from './components/Step1_FNOL';
 import Step2_Triage from './components/Step2_Triage';
 import Step3_Investigation from './components/Step3_Investigation';
 import Step4_Settlement from './components/Step4_Settlement';
-import FloatingChat from './components/FloatingChat';
-import QuickActions from './components/QuickActions';
+import SideDock from './components/SideDock';
 import Toast from './components/Toast';
+import NotificationPanel from './components/NotificationPanel';
+import CommandPalette from './components/CommandPalette';
+import Timeline from './components/Timeline';
+import ComparisonPanel from './components/ComparisonPanel';
 import { FnolResponse, TriageResponse, InvoiceAnalysisResponse, ToastMessage } from './types';
 
 function App() {
@@ -17,6 +19,12 @@ function App() {
   
   // Navigation State
   const [currentStep, setCurrentStep] = useState(1);
+  
+  // UI Panels State
+  const [isNotifOpen, setIsNotifOpen] = useState(false);
+  const [isCmdOpen, setIsCmdOpen] = useState(false);
+  const [isTimelineOpen, setIsTimelineOpen] = useState(false);
+  const [isCompareOpen, setIsCompareOpen] = useState(false);
   
   // Data State
   const [fnolData, setFnolData] = useState<FnolResponse | null>(null);
@@ -47,6 +55,34 @@ function App() {
     
     addToast(messages[actionName] || `Action: ${actionName} triggered`, actionName === 'Flag SIU' ? 'info' : 'success');
   };
+  
+  const handleCommand = (cmdId: string) => {
+      switch(cmdId) {
+          case 'docs': handleAction('Request Docs'); break;
+          case 'call': handleAction('Call Claimant'); break;
+          case 'siu': handleAction('Flag SIU'); break;
+          case 'step1': setCurrentStep(1); break;
+          case 'step2': if(fnolData) setCurrentStep(2); break;
+          case 'step3': if(triageData) setCurrentStep(3); break;
+          case 'step4': if(triageData) setCurrentStep(4); break;
+          case 'theme': toggleTheme(); break;
+          case 'compare': setIsCompareOpen(true); break;
+          case 'timeline': setIsTimelineOpen(true); break;
+          default: break;
+      }
+  };
+
+  // Keyboard shortcut listener for CMD+K
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setIsCmdOpen(prev => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   const handleFnolComplete = (data: FnolResponse) => {
     setFnolData(data);
@@ -81,7 +117,7 @@ function App() {
           name: "Sarah Mitchell",
           role: "Policyholder",
           action: "Filing new claim",
-          avatarColor: "from-emerald-400 to-green-600",
+          seed: "sarah-policyholder-2024",
           badgeColor: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
         };
       case 2:
@@ -89,7 +125,7 @@ function App() {
           name: "Michael Chen",
           role: "Claims Manager",
           action: "Reviewing & Assigning",
-          avatarColor: "from-amber-400 to-orange-600",
+          seed: "michael-claims-manager",
           badgeColor: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
         };
       case 3:
@@ -98,7 +134,7 @@ function App() {
           name: triageData?.recommendedAdjuster.name || "Alex Morgan",
           role: "Senior Adjuster",
           action: currentStep === 3 ? "Investigation" : "Settlement",
-          avatarColor: "from-brand-500 to-purple-600",
+          seed: "mike-senior-adjuster",
           badgeColor: "bg-brand-50 text-brand-700 dark:bg-brand-900/30 dark:text-brand-400"
         };
       default:
@@ -106,7 +142,7 @@ function App() {
           name: "Alex Morgan",
           role: "Senior Adjuster",
           action: "View Mode",
-          avatarColor: "from-brand-500 to-purple-600",
+          seed: "mike-senior-adjuster",
           badgeColor: "bg-gray-100 text-gray-700"
         };
     }
@@ -115,8 +151,14 @@ function App() {
   const persona = getCurrentPersona();
 
   return (
-    <div className="min-h-screen flex flex-col font-sans transition-colors duration-300">
+    <div className="min-h-screen flex flex-col font-sans transition-colors duration-300 relative">
       
+      {/* Global Panels */}
+      <NotificationPanel isOpen={isNotifOpen} onClose={() => setIsNotifOpen(false)} />
+      <CommandPalette isOpen={isCmdOpen} onClose={() => setIsCmdOpen(false)} onAction={handleCommand} />
+      <Timeline isOpen={isTimelineOpen} onClose={() => setIsTimelineOpen(false)} currentStep={currentStep} />
+      <ComparisonPanel isOpen={isCompareOpen} onClose={() => setIsCompareOpen(false)} />
+
       {/* Toast Container */}
       <div className="fixed top-20 right-4 z-[200] flex flex-col items-end pointer-events-none">
         {toasts.map(toast => (
@@ -169,12 +211,21 @@ function App() {
                 </div>
               </div>
 
-              {/* Dynamic Avatar */}
-              <div className={`h-9 w-9 rounded-full bg-gradient-to-tr ${persona.avatarColor} border-2 border-white dark:border-gray-800 shadow-sm transition-all duration-500 ring-2 ring-transparent group-hover:ring-brand-200 transform hover:scale-110`}></div>
+              {/* Dynamic Illustrated Avatar */}
+              <div className="w-11 h-11 rounded-xl overflow-hidden border-2 border-white dark:border-gray-800 shadow-sm transition-all duration-500 bg-gradient-to-tr from-brand-50 to-purple-50 hover:scale-110 cursor-pointer ring-2 ring-transparent hover:ring-brand-200">
+                <img 
+                  src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${persona.seed}`} 
+                  alt={persona.name}
+                  className="w-full h-full object-cover"
+                />
+              </div>
               
               <div className="h-6 w-px bg-gray-200 dark:bg-gray-700 mx-2"></div>
 
-              <button className="shake-hover p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors relative">
+              <button 
+                onClick={() => setIsNotifOpen(!isNotifOpen)}
+                className={`shake-hover p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors relative rounded-full ${isNotifOpen ? 'bg-gray-100 dark:bg-gray-800' : ''}`}
+              >
                 <Bell size={20} />
                 <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border border-white dark:border-gray-900 animate-[pulse_3s_infinite]"></span>
               </button>
@@ -208,9 +259,12 @@ function App() {
 
             {currentStep === 3 && (
               <>
-                <Step3_Investigation onInvoiceAnalyzed={setInvoiceAnalysis} />
+                <Step3_Investigation 
+                    onInvoiceAnalyzed={setInvoiceAnalysis} 
+                    onCompareClick={() => setIsCompareOpen(true)}
+                />
                 {/* Continue Button */}
-                <div className="fixed bottom-6 right-6 z-50">
+                <div className="fixed bottom-6 right-20 z-50">
                     <button 
                       onClick={handleInvestigationComplete}
                       className="btn-primary-anim px-8 py-3 rounded-xl bg-brand-600 text-white font-bold shadow-xl hover:shadow-brand-500/40 flex items-center"
@@ -223,16 +277,24 @@ function App() {
             )}
 
             {currentStep === 4 && (
-              <Step4_Settlement onComplete={handleRestart} invoiceData={invoiceAnalysis} />
+              <Step4_Settlement 
+                onComplete={handleRestart} 
+                invoiceData={invoiceAnalysis} 
+                onCompareClick={() => setIsCompareOpen(true)}
+              />
             )}
           </div>
 
         </div>
       </main>
 
-      {/* Global Floating Components */}
-      <FloatingChat />
-      <QuickActions step={currentStep} onAction={handleAction} />
+      {/* Global Vertical Dock */}
+      <SideDock 
+        currentStep={currentStep} 
+        onAction={handleAction} 
+        onTimelineClick={() => setIsTimelineOpen(true)}
+        isTimelineOpen={isTimelineOpen}
+      />
 
     </div>
   );

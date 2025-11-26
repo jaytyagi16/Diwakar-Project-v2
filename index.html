@@ -77,140 +77,388 @@
         border-color: rgba(99, 102, 241, 0.2);
       }
 
-      /* 2. Button Animations */
-      .btn-primary-anim {
-        transition: all 0.2s ease;
-        position: relative;
-        overflow: hidden;
+      /* 2. Glassmorphism Cards */
+      .glass-card {
+        background: rgba(255, 255, 255, 0.7);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(0, 0, 0, 0.08);
+        border-radius: 16px;
+        box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+        transition: all 0.3s ease;
       }
-      .btn-primary-anim:hover {
+      .dark .glass-card {
+        background: rgba(30, 41, 59, 0.4);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
+      }
+      .glass-card:hover {
         transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(14, 165, 233, 0.4);
       }
-      .btn-primary-anim:active {
-        transform: translateY(0);
-        box-shadow: 0 2px 8px rgba(14, 165, 233, 0.3);
-      }
-
-      /* 3. Icon Animations */
-      .icon-hover {
-        transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
-      }
-      .icon-hover:hover {
-        transform: scale(1.15);
-      }
-      .rotate-hover {
-        transition: transform 0.5s ease;
-      }
-      .rotate-hover:active {
-        transform: rotate(180deg);
-      }
-      .shake-hover:hover {
-        animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
-      }
-      @keyframes shake {
-        10%, 90% { transform: translate3d(-1px, 0, 0); }
-        20%, 80% { transform: translate3d(2px, 0, 0); }
-        30%, 50%, 70% { transform: translate3d(-2px, 0, 0); }
-        40%, 60% { transform: translate3d(2px, 0, 0); }
-      }
-
-      /* 4. Progress Bars & Shimmer */
-      @keyframes shimmer {
-        0% { transform: translateX(-100%); }
-        100% { transform: translateX(100%); }
-      }
-      .shimmer-effect {
-        position: relative;
-        overflow: hidden;
-      }
-      .shimmer-effect::after {
+      .glass-card::before {
         content: '';
         position: absolute;
         top: 0;
         left: 0;
-        width: 100%;
-        height: 100%;
+        right: 0;
+        height: 1px;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+        opacity: 0.5;
+      }
+
+      /* 3. Skeleton Loading */
+      .skeleton {
         background: linear-gradient(
           90deg,
-          rgba(255,255,255,0) 0%,
-          rgba(255,255,255,0.3) 50%,
-          rgba(255,255,255,0) 100%
+          rgba(0, 0, 0, 0.05) 0%,
+          rgba(0, 0, 0, 0.1) 50%,
+          rgba(0, 0, 0, 0.05) 100%
         );
-        transform: translateX(-100%);
-        animation: shimmer 2s infinite;
+        background-size: 200% 100%;
+        animation: shimmer 1.5s infinite;
       }
-      @keyframes fillWidth {
-        from { width: 0; }
-        to { width: var(--target-width); }
+      .dark .skeleton {
+        background: linear-gradient(
+          90deg,
+          rgba(255, 255, 255, 0.05) 0%,
+          rgba(255, 255, 255, 0.1) 50%,
+          rgba(255, 255, 255, 0.05) 100%
+        );
       }
-      .animate-fill-bar {
-        animation: fillWidth 1.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-      }
-
-      /* 5. Input Field Interactions */
-      .input-field-anim {
-        transition: all 0.2s ease;
-      }
-      .input-field-anim:hover {
-        border-color: #a5b4fc;
-      }
-      .input-field-anim:focus {
-        border-color: #6366f1;
-        box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
-        transform: scale(1.005);
+      @keyframes shimmer {
+        0% { background-position: 200% 0; }
+        100% { background-position: -200% 0; }
       }
 
-      /* 6. Upload Zone */
-      .upload-zone-anim:hover {
-        border-color: #0ea5e9;
-        background-color: rgba(14, 165, 233, 0.03);
+      /* 4. Rich Tooltips */
+      .tooltip-wrapper {
+        position: relative;
+        display: block;
       }
-      .upload-zone-anim:hover .upload-icon-bounce {
-        animation: bounce 0.6s ease infinite;
+      .rich-tooltip {
+        position: absolute;
+        bottom: 100%;
+        left: 50%;
+        transform: translateX(-50%);
+        margin-bottom: 12px;
+        width: 300px;
+        padding: 16px;
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(0, 0, 0, 0.1);
+        border-radius: 12px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+        z-index: 1000;
+        animation: tooltipIn 0.2s ease;
+        pointer-events: none;
       }
-      @keyframes bounce {
+      .dark .rich-tooltip {
+        background: rgba(20, 20, 30, 0.95);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+      }
+      .rich-tooltip::after {
+        content: '';
+        position: absolute;
+        top: 100%;
+        left: 50%;
+        transform: translateX(-50%);
+        border: 8px solid transparent;
+        border-top-color: rgba(255, 255, 255, 0.95);
+      }
+      .dark .rich-tooltip::after {
+        border-top-color: rgba(20, 20, 30, 0.95);
+      }
+      @keyframes tooltipIn {
+        from { opacity: 0; transform: translateX(-50%) translateY(8px); }
+        to { opacity: 1; transform: translateX(-50%) translateY(0); }
+      }
+
+      /* 5. Command Palette */
+      .command-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(4px);
+        z-index: 2000;
+        animation: fadeIn 0.2s ease;
+      }
+      .command-palette {
+        position: fixed;
+        top: 20%;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 90%;
+        max-width: 600px;
+        max-height: 70vh;
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(0, 0, 0, 0.1);
+        border-radius: 16px;
+        overflow: hidden;
+        z-index: 2001;
+        animation: paletteIn 0.2s ease;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+      }
+      .dark .command-palette {
+        background: rgba(30, 30, 40, 0.95);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+      }
+      @keyframes paletteIn {
+        from { opacity: 0; transform: translateX(-50%) scale(0.95); }
+        to { opacity: 1; transform: translateX(-50%) scale(1); }
+      }
+
+      /* 6. Success Animations */
+      @keyframes stroke {
+        100% { stroke-dashoffset: 0; }
+      }
+      @keyframes popIn {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.1); }
+        100% { transform: scale(1); }
+      }
+
+      /* --- SIDE DOCK STYLES (Compact & Collapsible) --- */
+      .side-dock {
+        position: fixed;
+        right: 0;
+        top: 50%;
+        transform: translateY(-50%);
+        display: flex;
+        flex-direction: column;
+        gap: 6px; /* Reduced gap */
+        padding: 8px 6px; /* Compact padding */
+        border-radius: 16px 0 0 16px;
+        z-index: 1000;
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
+      }
+      
+      /* Collapsed State: Slide off screen */
+      .side-dock.collapsed {
+        transform: translateY(-50%) translateX(120%);
+        pointer-events: none;
+      }
+
+      /* Light Mode Dock */
+      :not(.dark) .side-dock {
+        background: rgba(255, 255, 255, 0.9);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        border: 1px solid rgba(0, 0, 0, 0.08);
+        border-right: none;
+        box-shadow: -4px 0 24px rgba(0, 0, 0, 0.1);
+      }
+
+      /* Dark Mode Dock */
+      .dark .side-dock {
+        background: rgba(20, 20, 30, 0.85);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-right: none;
+        box-shadow: -4px 0 24px rgba(0, 0, 0, 0.3);
+      }
+
+      .side-dock:not(.collapsed):hover {
+        transform: translateY(-50%) translateX(-2px);
+        box-shadow: -8px 0 32px rgba(0, 0, 0, 0.2);
+      }
+
+      /* Compact Dock Buttons */
+      .dock-btn {
+        position: relative;
+        width: 40px; /* Compact size */
+        height: 40px; /* Compact size */
+        border-radius: 10px; /* Adjusted radius */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        overflow: hidden;
+        font-size: 18px; /* Smaller icon container */
+      }
+
+      /* Button Icons */
+      .dock-btn .icon {
+        width: 18px;
+        height: 18px;
+      }
+
+      /* Light Mode Buttons */
+      :not(.dark) .dock-btn {
+        background: rgba(0, 0, 0, 0.04);
+        border: 1px solid rgba(0, 0, 0, 0.08);
+        color: rgba(0, 0, 0, 0.6);
+      }
+      :not(.dark) .dock-btn:hover {
+        background: rgba(99, 102, 241, 0.15);
+        border-color: rgba(99, 102, 241, 0.3);
+        color: #4f46e5;
+      }
+
+      /* Dark Mode Buttons */
+      .dark .dock-btn {
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        color: rgba(255, 255, 255, 0.7);
+      }
+      .dark .dock-btn:hover {
+        background: rgba(99, 102, 241, 0.3);
+        border-color: rgba(99, 102, 241, 0.5);
+        color: white;
+      }
+
+      /* Gradient Hover Effect */
+      .dock-btn::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        border-radius: 10px;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        z-index: -1;
+      }
+      .dock-btn:hover::before {
+        opacity: 1;
+      }
+      .dock-btn:hover {
+        transform: scale(1.1) translateX(-4px);
+        color: white !important;
+        border-color: transparent !important;
+      }
+
+      /* Specific Button Colors */
+      .dock-btn.actions-btn:hover::before { background: linear-gradient(135deg, #6366f1, #8b5cf6); }
+      .dock-btn.actions-btn:hover { box-shadow: 0 0 20px rgba(99, 102, 241, 0.5); }
+
+      .dock-btn.chat-btn:hover::before { background: linear-gradient(135deg, #3b82f6, #06b6d4); }
+      .dock-btn.chat-btn:hover { box-shadow: 0 0 20px rgba(59, 130, 246, 0.5); }
+
+      .dock-btn.help-btn:hover::before { background: linear-gradient(135deg, #10b981, #34d399); }
+      .dock-btn.help-btn:hover { box-shadow: 0 0 20px rgba(16, 185, 129, 0.5); }
+
+      .dock-btn.timeline-btn:hover::before { background: linear-gradient(135deg, #ec4899, #f472b6); }
+      .dock-btn.timeline-btn:hover { box-shadow: 0 0 20px rgba(236, 72, 153, 0.5); }
+
+      /* Active State */
+      .dock-btn.active {
+        color: white !important;
+        border-color: transparent !important;
+        box-shadow: 0 0 16px rgba(99, 102, 241, 0.4);
+      }
+      .dock-btn.active::before { opacity: 1; }
+      .dock-btn.actions-btn.active { background: linear-gradient(135deg, #6366f1, #8b5cf6) !important; }
+      .dock-btn.chat-btn.active { background: linear-gradient(135deg, #3b82f6, #06b6d4) !important; }
+      .dock-btn.help-btn.active { background: linear-gradient(135deg, #10b981, #34d399) !important; }
+      
+      /* Icon Animations */
+      .dock-btn .icon { transition: transform 0.3s ease; }
+      .dock-btn:hover .icon { transform: scale(1.15); }
+      .dock-btn.chat-btn:hover .icon { animation: iconBounce 0.5s ease; }
+      .dock-btn.actions-btn:hover .icon { animation: iconPulse 0.5s ease; }
+      
+      @keyframes iconBounce {
         0%, 100% { transform: translateY(0); }
-        50% { transform: translateY(-6px); }
+        50% { transform: translateY(-3px); }
+      }
+      @keyframes iconPulse {
+        0%, 100% { transform: scale(1.15); }
+        50% { transform: scale(1.25); }
       }
 
-      /* 7. List Items */
-      .list-item-hover {
+      /* Tooltips */
+      .dock-btn::after {
+        content: attr(data-tooltip);
+        position: absolute;
+        right: calc(100% + 10px);
+        top: 50%;
+        transform: translateY(-50%) translateX(8px);
+        padding: 6px 10px;
+        border-radius: 8px;
+        white-space: nowrap;
+        opacity: 0;
+        pointer-events: none;
         transition: all 0.2s ease;
+        font-size: 12px;
+        font-weight: 500;
       }
-      .list-item-hover:hover {
-        background-color: rgba(99, 102, 241, 0.04);
-        padding-left: 12px;
+      /* Light Mode Tooltip */
+      :not(.dark) .dock-btn::after {
+        background: white;
+        color: #1f2937;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+        border: 1px solid rgba(0, 0, 0, 0.08);
+      }
+      /* Dark Mode Tooltip */
+      .dark .dock-btn::after {
+        background: rgba(30, 30, 40, 0.95);
+        color: white;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+      }
+      .dock-btn:hover::after {
+        opacity: 1;
+        transform: translateY(-50%) translateX(0);
       }
 
-      /* 8. Chat Animations */
-      @keyframes fabPulse {
-        0%, 100% { box-shadow: 0 4px 16px rgba(99, 102, 241, 0.3); }
-        50% { box-shadow: 0 4px 24px rgba(99, 102, 241, 0.6); }
+      /* Idle Animations */
+      .dock-btn.chat-btn:not(:hover):not(.active) {
+        animation: subtlePulse 3s ease-in-out infinite;
       }
-      .fab-pulse {
-        animation: fabPulse 3s ease-in-out infinite;
+      @keyframes subtlePulse {
+        0%, 100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+        50% { box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1); }
       }
-      @keyframes slideInRight {
-        from { opacity: 0; transform: translateX(20px); }
-        to { opacity: 1; transform: translateX(0); }
+
+      /* Notification Dot */
+      .notification-dot {
+        position: absolute;
+        top: 6px;
+        right: 6px;
+        width: 6px;
+        height: 6px;
+        background: #ef4444;
+        border-radius: 50%;
+        box-shadow: 0 0 0 2px var(--bg-color, #1f2937); 
+        animation: dotPulse 2s ease-in-out infinite;
       }
-      @keyframes slideInLeft {
-        from { opacity: 0; transform: translateX(-20px); }
-        to { opacity: 1; transform: translateX(0); }
+      :not(.dark) .notification-dot { box-shadow: 0 0 0 2px white; }
+      @keyframes dotPulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.2); }
       }
+
+      /* Existing Animations */
+      .btn-primary-anim { transition: all 0.2s ease; position: relative; overflow: hidden; }
+      .btn-primary-anim:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(14, 165, 233, 0.4); }
+      .icon-hover { transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1); }
+      .icon-hover:hover { transform: scale(1.15); }
+      .rotate-hover { transition: transform 0.5s ease; }
+      .rotate-hover:active { transform: rotate(180deg); }
+      .shake-hover:hover { animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both; }
+      @keyframes shake { 10%, 90% { transform: translate3d(-1px, 0, 0); } 20%, 80% { transform: translate3d(2px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-2px, 0, 0); } 40%, 60% { transform: translate3d(2px, 0, 0); } }
+      .shimmer-effect { position: relative; overflow: hidden; }
+      .shimmer-effect::after { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.3) 50%, rgba(255,255,255,0) 100%); transform: translateX(-100%); animation: shimmer 2s infinite; }
+      @keyframes fillWidth { from { width: 0; } to { width: var(--target-width); } }
+      .animate-fill-bar { animation: fillWidth 1.5s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+      .input-field-anim { transition: all 0.2s ease; }
+      .input-field-anim:hover { border-color: #a5b4fc; }
+      .input-field-anim:focus { border-color: #6366f1; box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1); transform: scale(1.005); }
+      .upload-zone-anim:hover { border-color: #0ea5e9; background-color: rgba(14, 165, 233, 0.03); }
+      .upload-zone-anim:hover .upload-icon-bounce { animation: bounce 0.6s ease infinite; }
+      @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+      .list-item-hover { transition: all 0.2s ease; }
+      .list-item-hover:hover { background-color: rgba(99, 102, 241, 0.04); padding-left: 12px; }
+      @keyframes fabPulse { 0%, 100% { box-shadow: 0 4px 16px rgba(99, 102, 241, 0.3); } 50% { box-shadow: 0 4px 24px rgba(99, 102, 241, 0.6); } }
+      .fab-pulse { animation: fabPulse 3s ease-in-out infinite; }
+      @keyframes slideInRight { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
+      @keyframes slideInLeft { from { opacity: 0; transform: translateX(-20px); } to { opacity: 1; transform: translateX(0); } }
       .msg-enter-right { animation: slideInRight 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
       .msg-enter-left { animation: slideInLeft 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
-
-      /* 9. Page Transition */
-      .page-transition {
-        animation: fadeSlideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1);
-      }
-      @keyframes fadeSlideUp {
-        from { opacity: 0; transform: translateY(15px); }
-        to { opacity: 1; transform: translateY(0); }
-      }
-
+      .page-transition { animation: fadeSlideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1); }
+      @keyframes fadeSlideUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
     </style>
   <script type="importmap">
 {

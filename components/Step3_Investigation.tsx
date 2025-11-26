@@ -5,12 +5,19 @@ import { investigationResponses, invoiceAnalysisResponses } from '../data/dummyD
 import { getRandomItem, formatCurrency, wait } from '../utils/helpers';
 import FileUpload from './FileUpload';
 import AIAutomationBanner from './AIAutomationBanner';
+import useCountUp from '../hooks/useCountUp';
 
 interface Step3Props {
   onInvoiceAnalyzed?: (invoice: InvoiceAnalysisResponse) => void;
+  onCompareClick?: () => void;
 }
 
-const Step3_Investigation: React.FC<Step3Props> = ({ onInvoiceAnalyzed }) => {
+const AnimatedNumber = ({ value, prefix = '' }: { value: number, prefix?: string }) => {
+    const animatedValue = useCountUp(value, 1500);
+    return <span>{prefix}{animatedValue.toLocaleString()}</span>;
+}
+
+const Step3_Investigation: React.FC<Step3Props> = ({ onInvoiceAnalyzed, onCompareClick }) => {
   const [data, setData] = useState<InvestigationResponse | null>(null);
   const [invoiceAnalysis, setInvoiceAnalysis] = useState<InvoiceAnalysisResponse | null>(null);
   const [isAnalyzingInvoice, setIsAnalyzingInvoice] = useState(false);
@@ -60,11 +67,11 @@ const Step3_Investigation: React.FC<Step3Props> = ({ onInvoiceAnalyzed }) => {
     <div className="max-w-6xl mx-auto space-y-8 page-transition pb-32">
       <AIAutomationBanner />
       
-      {/* Top Grid: Investigation KPIs */}
+      {/* Top Grid: Investigation KPIs - Glassmorphism applied */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         
-        {/* Severity Card - Fixed */}
-        <div className="hover-card bg-white dark:bg-gray-800 p-5 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm col-span-1">
+        {/* Severity Card */}
+        <div className="glass-card p-5 col-span-1">
            <div className="flex items-center gap-2 mb-2">
              <AlertTriangle size={16} className="text-gray-500" />
              <p className="text-xs text-gray-500 uppercase font-bold tracking-wider">Severity</p>
@@ -101,20 +108,22 @@ const Step3_Investigation: React.FC<Step3Props> = ({ onInvoiceAnalyzed }) => {
            </ul>
         </div>
 
-        <div className="hover-card bg-white dark:bg-gray-800 p-5 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm">
+        {/* Cost Card */}
+        <div className="glass-card p-5">
            <div className="flex items-center gap-2 mb-2">
              <DollarSign size={16} className="text-gray-500" />
              <p className="text-xs text-gray-500 uppercase font-bold tracking-wider">Est. Cost</p>
            </div>
            <p className="text-xl font-mono font-bold text-gray-900 dark:text-gray-100 mt-2">
-             {formatCurrency(data.estimatedCostRange.min)}
+             <AnimatedNumber value={data.estimatedCostRange.min} prefix="$" />
              <span className="text-gray-400 text-sm font-normal mx-1">-</span>
-             {formatCurrency(data.estimatedCostRange.max)}
+             <AnimatedNumber value={data.estimatedCostRange.max} prefix="$" />
            </p>
            <p className="text-[10px] text-gray-400 mt-1">Includes parts & labor</p>
         </div>
 
-        <div className="hover-card bg-white dark:bg-gray-800 p-5 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm">
+        {/* Liability Card */}
+        <div className="glass-card p-5">
            <div className="flex items-center gap-2 mb-2">
              <TrendingUp size={16} className="text-gray-500" />
              <p className="text-xs text-gray-500 uppercase font-bold tracking-wider">Liability</p>
@@ -129,13 +138,14 @@ const Step3_Investigation: React.FC<Step3Props> = ({ onInvoiceAnalyzed }) => {
            </div>
         </div>
 
-        <div className="hover-card bg-white dark:bg-gray-800 p-5 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm">
+        {/* Confidence Card */}
+        <div className="glass-card p-5">
            <div className="flex items-center gap-2 mb-2">
              <Sparkles size={16} className="text-brand-500" />
              <p className="text-xs text-gray-500 uppercase font-bold tracking-wider">Confidence</p>
            </div>
            <div className="flex items-baseline text-brand-600 dark:text-brand-400 font-bold text-2xl mt-1">
-              {(data.confidence * 100).toFixed(0)}%
+             <AnimatedNumber value={Math.floor(data.confidence * 100)} />%
            </div>
            <p className="text-[10px] text-gray-400 mt-1">AI certainty score</p>
         </div>
@@ -187,8 +197,8 @@ const Step3_Investigation: React.FC<Step3Props> = ({ onInvoiceAnalyzed }) => {
         {/* Right Column: Invoice Analyzer */}
         <div className="space-y-6">
           
-          {/* Enhanced Invoice Analyzer */}
-          <div className="hover-card bg-white dark:bg-gray-800 p-0 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm relative overflow-hidden h-full flex flex-col min-h-[500px]">
+          {/* Enhanced Invoice Analyzer with Glassmorphism */}
+          <div className="glass-card p-0 relative overflow-hidden h-full flex flex-col min-h-[500px]">
              
              {/* Header */}
              <div className="p-6 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between bg-gray-50/50 dark:bg-gray-800/50">
@@ -196,7 +206,16 @@ const Step3_Investigation: React.FC<Step3Props> = ({ onInvoiceAnalyzed }) => {
                  <FileText className="w-5 h-5 mr-2 text-brand-500" />
                  Invoice Analyzer
                </h3>
-               {invoiceAnalysis && <span className="text-xs bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300 px-3 py-1 rounded-full font-bold animate-[fadeIn_0.5s_ease]">AI Verified</span>}
+               {invoiceAnalysis ? (
+                   <span className="text-xs bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300 px-3 py-1 rounded-full font-bold animate-[fadeIn_0.5s_ease]">AI Verified</span>
+               ) : (
+                   <button 
+                    onClick={onCompareClick}
+                    className="text-xs bg-brand-100 text-brand-700 dark:bg-brand-900/30 dark:text-brand-300 px-3 py-1 rounded-full font-bold hover:bg-brand-200 transition-colors flex items-center"
+                   >
+                       <BarChart3 size={12} className="mr-1"/> Compare Similar
+                   </button>
+               )}
              </div>
 
              <div className="p-6 flex-1 flex flex-col">
@@ -285,7 +304,7 @@ const Step3_Investigation: React.FC<Step3Props> = ({ onInvoiceAnalyzed }) => {
                       {/* Customer Pays */}
                       <div className="p-4 rounded-2xl bg-gradient-to-br from-red-50 to-rose-50 dark:from-red-900/20 dark:to-rose-900/10 border border-red-100 dark:border-red-900/30 shadow-sm text-center transform transition-transform hover:scale-[1.02]">
                          <p className="text-xs font-bold text-red-600 dark:text-red-400 uppercase tracking-wide mb-1">Customer Pays</p>
-                         <p className="text-2xl font-bold text-gray-900 dark:text-white mb-2">{formatCurrency(invoiceAnalysis.totals.customerPays)}</p>
+                         <p className="text-2xl font-bold text-gray-900 dark:text-white mb-2"><AnimatedNumber value={invoiceAnalysis.totals.customerPays} prefix="$" /></p>
                          <div className="text-[10px] text-gray-500 space-y-1">
                             <div className="flex justify-between px-2"><span>Deductible:</span> <span>{formatCurrency(invoiceAnalysis.totals.deductible)}</span></div>
                             <div className="flex justify-between px-2"><span>Not Covered:</span> <span>{formatCurrency(invoiceAnalysis.totals.totalBilled - invoiceAnalysis.totals.totalCovered)}</span></div>
@@ -295,7 +314,7 @@ const Step3_Investigation: React.FC<Step3Props> = ({ onInvoiceAnalyzed }) => {
                       {/* Insurer Pays */}
                       <div className="p-4 rounded-2xl bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/10 border border-green-100 dark:border-green-900/30 shadow-sm text-center transform transition-transform hover:scale-[1.02]">
                          <p className="text-xs font-bold text-green-600 dark:text-green-400 uppercase tracking-wide mb-1">Insurance Pays</p>
-                         <p className="text-2xl font-bold text-gray-900 dark:text-white mb-2">{formatCurrency(invoiceAnalysis.totals.insurerPays)}</p>
+                         <p className="text-2xl font-bold text-gray-900 dark:text-white mb-2"><AnimatedNumber value={invoiceAnalysis.totals.insurerPays} prefix="$" /></p>
                          <div className="text-[10px] text-gray-500 space-y-1">
                             <div className="flex justify-between px-2"><span>Total Covered:</span> <span>{formatCurrency(invoiceAnalysis.totals.totalCovered)}</span></div>
                             <div className="flex justify-between px-2"><span>Less Deductible:</span> <span>-{formatCurrency(invoiceAnalysis.totals.deductible)}</span></div>

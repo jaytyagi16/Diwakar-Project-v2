@@ -1,9 +1,10 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { Mic, ArrowRight, Loader2, Info, StopCircle, Waveform } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { Mic, ArrowRight, Loader2, Info, StopCircle, User, Phone, Mail, Car, MapPin, Calendar, Clock, FileText, Paperclip, CheckCircle2, Sparkles, Image as ImageIcon, Film } from 'lucide-react';
 import FileUpload from './FileUpload';
 import { fnolResponses } from '../data/dummyData';
 import { getRandomItem, wait } from '../utils/helpers';
 import { FnolResponse } from '../types';
+import AIProcessingIndicator from './AIProcessingIndicator';
 
 declare global {
   interface Window {
@@ -57,14 +58,11 @@ const Step1_FNOL: React.FC<Step1Props> = ({ onComplete }) => {
       };
 
       recognition.onresult = (event: any) => {
-        let interimTranscript = '';
         let finalTranscript = '';
 
         for (let i = event.resultIndex; i < event.results.length; ++i) {
           if (event.results[i].isFinal) {
             finalTranscript += event.results[i][0].transcript;
-          } else {
-            interimTranscript += event.results[i][0].transcript;
           }
         }
         
@@ -101,18 +99,22 @@ const Step1_FNOL: React.FC<Step1Props> = ({ onComplete }) => {
     setIsListening(false);
   };
 
-  const handleAnalyze = async () => {
+  const handleAnalyze = () => {
     if (!description && images.length === 0) {
       alert("Please provide at least a description or upload images.");
       return;
     }
-    
     setIsAnalyzing(true);
-    await wait(2500); 
-    
+  };
+
+  const handleAIComplete = () => {
     const dummyFnol = getRandomItem(fnolResponses);
     setGeneratedFnol(dummyFnol);
     setIsAnalyzing(false);
+    // Scroll to summary
+    setTimeout(() => {
+        window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+    }, 100);
   };
 
   return (
@@ -250,15 +252,123 @@ const Step1_FNOL: React.FC<Step1Props> = ({ onComplete }) => {
         </div>
       </div>
 
-      {/* Action Bar */}
-      <div className="sticky bottom-6 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md p-4 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 flex justify-between items-center z-10 transition-transform duration-300 hover:translate-y-[-2px]">
-         <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
-            <Info size={16} className="mr-2 text-brand-500" />
-            <span>AI will extract vehicle details automatically</span>
-         </div>
+      {isAnalyzing && (
+        <AIProcessingIndicator onComplete={handleAIComplete} />
+      )}
 
-         {!generatedFnol ? (
-            <button 
+      {!isAnalyzing && generatedFnol && (
+        <div className="glass-card p-0 overflow-hidden animate-slide-up mb-8 shadow-2xl dark:shadow-brand-900/20">
+          {/* Header */}
+          <div className="bg-green-50 dark:bg-green-900/20 p-4 border-b border-green-100 dark:border-green-900/30 flex justify-between items-center">
+            <span className="flex items-center text-green-700 dark:text-green-400 font-bold text-lg">
+              <CheckCircle2 className="mr-2 h-5 w-5" /> FNOL Summary Generated
+            </span>
+            <span className="bg-white dark:bg-gray-800 px-3 py-1 rounded-full text-xs font-bold shadow-sm text-green-700 dark:text-green-400 border border-green-100 dark:border-green-900/30">
+              Confidence: {(generatedFnol.confidence * 100).toFixed(0)}%
+            </span>
+          </div>
+          
+          <div className="p-6 space-y-6">
+            {/* Claim Details */}
+            <div className="grid grid-cols-2 gap-4 pb-6 border-b border-gray-100 dark:border-gray-700">
+               <div>
+                 <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Policy Number</p>
+                 <p className="font-mono font-bold text-gray-900 dark:text-white text-lg">{generatedFnol.policyNumber}</p>
+               </div>
+               <div>
+                 <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Claim ID</p>
+                 <p className="font-mono font-bold text-gray-900 dark:text-white text-lg">{generatedFnol.id}</p>
+               </div>
+            </div>
+
+            {/* Policyholder */}
+            <div>
+               <h4 className="text-sm font-bold text-gray-900 dark:text-white mb-3 flex items-center">
+                 <User size={16} className="mr-2 text-brand-500" /> POLICYHOLDER
+               </h4>
+               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm bg-gray-50 dark:bg-gray-800/50 p-3 rounded-xl border border-gray-100 dark:border-gray-700">
+                  <div><span className="text-gray-500 block text-xs mb-0.5">Name</span> <span className="font-medium text-gray-900 dark:text-white">{generatedFnol.claimant}</span></div>
+                  <div><span className="text-gray-500 block text-xs mb-0.5">Contact</span> <span className="font-medium text-gray-900 dark:text-white">(555) 123-4567</span></div>
+                  <div><span className="text-gray-500 block text-xs mb-0.5">Email</span> <span className="font-medium text-gray-900 dark:text-white">{generatedFnol.claimant.toLowerCase().replace(' ', '.')}@email.com</span></div>
+               </div>
+            </div>
+
+            <div className="border-t border-gray-100 dark:border-gray-700"></div>
+
+            {/* Vehicle Info */}
+            <div>
+               <h4 className="text-sm font-bold text-gray-900 dark:text-white mb-3 flex items-center">
+                 <Car size={16} className="mr-2 text-brand-500" /> VEHICLE INFORMATION
+               </h4>
+               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm bg-gray-50 dark:bg-gray-800/50 p-3 rounded-xl border border-gray-100 dark:border-gray-700">
+                  <div><span className="text-gray-500 block text-xs mb-0.5">Make/Model</span> <span className="font-medium text-gray-900 dark:text-white">{generatedFnol.vehicleInfo.year} {generatedFnol.vehicleInfo.make} {generatedFnol.vehicleInfo.model}</span></div>
+                  <div><span className="text-gray-500 block text-xs mb-0.5">VIN</span> <span className="font-medium font-mono text-gray-900 dark:text-white">1HGBH41JXMN109186</span></div>
+                  <div><span className="text-gray-500 block text-xs mb-0.5">License Plate</span> <span className="font-medium font-mono text-gray-900 dark:text-white">ABC-1234</span></div>
+                  <div><span className="text-gray-500 block text-xs mb-0.5">Color</span> <span className="font-medium text-gray-900 dark:text-white">Silver</span></div>
+               </div>
+            </div>
+
+            <div className="border-t border-gray-100 dark:border-gray-700"></div>
+
+            {/* Incident Details */}
+            <div>
+               <h4 className="text-sm font-bold text-gray-900 dark:text-white mb-3 flex items-center">
+                 <MapPin size={16} className="mr-2 text-brand-500" /> INCIDENT DETAILS
+               </h4>
+               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm bg-gray-50 dark:bg-gray-800/50 p-3 rounded-xl border border-gray-100 dark:border-gray-700">
+                  <div><span className="text-gray-500 block text-xs mb-0.5">Date</span> <span className="font-medium text-gray-900 dark:text-white">{generatedFnol.incidentDate}</span></div>
+                  <div><span className="text-gray-500 block text-xs mb-0.5">Time</span> <span className="font-medium text-gray-900 dark:text-white">10:24 AM</span></div>
+                  <div className="col-span-2"><span className="text-gray-500 block text-xs mb-0.5">Location</span> <span className="font-medium text-gray-900 dark:text-white">{generatedFnol.incidentLocation}</span></div>
+               </div>
+            </div>
+
+            <div className="border-t border-gray-100 dark:border-gray-700"></div>
+
+            {/* AI Summary */}
+            <div className="bg-brand-50 dark:bg-brand-900/20 p-4 rounded-xl border border-brand-100 dark:border-brand-800">
+               <h4 className="text-sm font-bold text-brand-700 dark:text-brand-300 mb-2 flex items-center">
+                 <Sparkles size={16} className="mr-2" /> AI-EXTRACTED SUMMARY
+               </h4>
+               <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed italic">
+                 "{generatedFnol.damageDescription}"
+               </p>
+            </div>
+
+            {/* Evidence */}
+            <div>
+               <h4 className="text-sm font-bold text-gray-900 dark:text-white mb-3 flex items-center">
+                 <Paperclip size={16} className="mr-2 text-brand-500" /> EVIDENCE UPLOADED
+               </h4>
+               <div className="flex gap-4 text-sm text-gray-600 dark:text-gray-400">
+                  <span className="flex items-center bg-gray-100 dark:bg-gray-800 px-3 py-1.5 rounded-lg"><ImageIcon size={14} className="mr-2 text-blue-500"/> {images.length || 4} photos</span>
+                  <span className="flex items-center bg-gray-100 dark:bg-gray-800 px-3 py-1.5 rounded-lg"><Film size={14} className="mr-2 text-purple-500"/> {videos.length || 1} video</span>
+                  <span className="flex items-center bg-gray-100 dark:bg-gray-800 px-3 py-1.5 rounded-lg"><FileText size={14} className="mr-2 text-orange-500"/> {docs.length || 2} documents</span>
+               </div>
+            </div>
+          </div>
+          
+          {/* Footer Action */}
+          <div className="bg-gray-50 dark:bg-gray-900/50 p-6 border-t border-gray-100 dark:border-gray-700 flex justify-end">
+             <button 
+               onClick={() => onComplete(generatedFnol)}
+               className="btn-primary-anim flex items-center px-8 py-3 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-bold shadow-lg hover:shadow-brand-500/30 text-lg group"
+             >
+               Continue to AI Triage
+               <ArrowRight className="ml-2 group-hover:translate-x-1 transition-transform" size={20} />
+             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Generate Button - Only show if not generated yet */}
+      {!generatedFnol && (
+        <div className="sticky bottom-6 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md p-4 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 flex justify-between items-center z-10 transition-transform duration-300 hover:translate-y-[-2px]">
+           <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
+              <Info size={16} className="mr-2 text-brand-500" />
+              <span>AI will extract vehicle details automatically</span>
+           </div>
+
+           <button 
               onClick={handleAnalyze}
               disabled={isAnalyzing}
               className={`btn-primary-anim flex items-center px-6 py-3 rounded-xl text-white font-medium
@@ -277,57 +387,6 @@ const Step1_FNOL: React.FC<Step1Props> = ({ onComplete }) => {
                 </>
               )}
             </button>
-         ) : (
-            <div className="flex items-center space-x-4 animate-fade-in">
-              <div className="text-right hidden sm:block">
-                 <p className="text-xs text-gray-500 uppercase font-semibold">FNOL Generated</p>
-                 <p className="text-sm font-bold text-gray-900 dark:text-white">Confidence: {(generatedFnol.confidence * 100).toFixed(0)}%</p>
-              </div>
-              <button 
-                onClick={() => onComplete(generatedFnol)}
-                className="btn-primary-anim flex items-center px-6 py-3 rounded-xl bg-green-600 hover:bg-green-700 text-white font-medium shadow-lg hover:shadow-green-500/30"
-              >
-                Continue to AI Triage
-                <ArrowRight className="ml-2" size={20} />
-              </button>
-            </div>
-         )}
-      </div>
-
-      {/* Generated Summary Card Preview */}
-      {generatedFnol && (
-        <div className="animate-slide-up bg-gradient-to-br from-brand-50 to-white dark:from-brand-900/20 dark:to-gray-800 p-6 rounded-2xl border border-brand-100 dark:border-brand-900/50 relative overflow-hidden shadow-lg">
-           <div className="relative z-10">
-             <div className="flex justify-between items-start mb-4">
-               <h3 className="text-lg font-bold text-gray-900 dark:text-white">AI Generated FNOL Summary</h3>
-               <span className="bg-brand-100 dark:bg-brand-900 text-brand-700 dark:text-brand-300 px-3 py-1 rounded-full text-xs font-mono border border-brand-200 dark:border-brand-700">
-                 {generatedFnol.id}
-               </span>
-             </div>
-             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                {[
-                  { label: "Policy", value: generatedFnol.policyNumber },
-                  { label: "Vehicle", value: `${generatedFnol.vehicleInfo.year} ${generatedFnol.vehicleInfo.make} ${generatedFnol.vehicleInfo.model}` },
-                  { label: "Est. Damage", value: generatedFnol.estimatedDamage },
-                  { label: "Location", value: generatedFnol.incidentLocation }
-                ].map((item, i) => (
-                  <div key={i} className="p-3 bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-100 dark:border-gray-800 hover:border-brand-300 dark:hover:border-brand-700 transition-colors">
-                     <p className="text-xs text-gray-500">{item.label}</p>
-                     <p className="font-semibold dark:text-gray-200 truncate">{item.value}</p>
-                  </div>
-                ))}
-             </div>
-             <div>
-                <p className="text-xs text-gray-500 mb-1">AI Extracted Details:</p>
-                <div className="flex flex-wrap gap-2">
-                   {generatedFnol.aiExtractedDetails.map((tag, i) => (
-                      <span key={i} className="px-2 py-1 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded text-xs text-gray-700 dark:text-gray-300 shadow-sm animate-fade-in" style={{ animationDelay: `${i * 0.1}s` }}>
-                        {tag}
-                      </span>
-                   ))}
-                </div>
-             </div>
-           </div>
         </div>
       )}
 
