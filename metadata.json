@@ -1,0 +1,7 @@
+{
+  "name": "Copy of ClaimsFlow AI",
+  "description": "Enterprise-grade AI Claims Processing Dashboard featuring a modern, minimal UI with simulated AI agents for FNOL, Triage, and Investigation.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
