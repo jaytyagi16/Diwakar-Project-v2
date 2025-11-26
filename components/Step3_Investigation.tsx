@@ -1,462 +1,344 @@
+import React, { useState, useEffect } from 'react';
+import { DollarSign, AlertCircle, FileCheck, Check, Sparkles, XCircle, FileText, CheckCircle, BarChart3, TrendingUp, AlertTriangle } from 'lucide-react';
+import { InvestigationResponse, InvoiceAnalysisResponse } from '../types';
+import { investigationResponses, invoiceAnalysisResponses } from '../data/dummyData';
+import { getRandomItem, formatCurrency, wait } from '../utils/helpers';
+import FileUpload from './FileUpload';
+import AIAutomationBanner from './AIAutomationBanner';
 
-import React, { useState, useEffect, useRef } from 'react';
-import { 
-  FileText, DollarSign, CheckSquare, 
-  Search, AlertCircle, TrendingUp, Sparkles, 
-  Upload, X, Minimize2, Send, Clock, CheckCircle2,
-  User, Briefcase, FileCheck, AlertTriangle
-} from 'lucide-react';
-import { Card } from './ui/Card';
-import { Button } from './ui/Button';
-import { Badge } from './ui/Badge';
-import { generateDummyData } from '../data/dummyData';
-import { InvestigationData, InvoiceData, FNOLData, TriageData } from '../types';
-import { motion, AnimatePresence } from 'framer-motion';
+interface Step3Props {
+  onInvoiceAnalyzed?: (invoice: InvoiceAnalysisResponse) => void;
+}
 
-export const Step3_Investigation: React.FC = () => {
-  const [data, setData] = useState<InvestigationData | null>(null);
-  const [invoiceData, setInvoiceData] = useState<InvoiceData | null>(null);
-  const [fnolData, setFnolData] = useState<FNOLData | null>(null);
-  const [triageData, setTriageData] = useState<TriageData | null>(null);
+const Step3_Investigation: React.FC<Step3Props> = ({ onInvoiceAnalyzed }) => {
+  const [data, setData] = useState<InvestigationResponse | null>(null);
+  const [invoiceAnalysis, setInvoiceAnalysis] = useState<InvoiceAnalysisResponse | null>(null);
+  const [isAnalyzingInvoice, setIsAnalyzingInvoice] = useState(false);
   
-  // Invoice Upload States
-  const [invoiceFile, setInvoiceFile] = useState<File | null>(null);
-  const [isUploading, setIsUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
-  const [uploadStatus, setUploadStatus] = useState('');
-  const [showAnalysis, setShowAnalysis] = useState(false);
-
-  // AI Assistant States
-  const [isAiOpen, setIsAiOpen] = useState(false);
-  const [aiQuery, setAiQuery] = useState('');
-  const [aiResponse, setAiResponse] = useState<string | null>(null);
-  const [isTyping, setIsTyping] = useState(false);
-  const chatEndRef = useRef<HTMLDivElement>(null);
-
   useEffect(() => {
-    const dummy = generateDummyData();
-    setData(dummy.investigation);
-    setInvoiceData(dummy.invoice);
-    setFnolData(dummy.fnol);
-    setTriageData(dummy.triage);
+    setTimeout(() => {
+      setData(getRandomItem(investigationResponses));
+    }, 800);
   }, []);
 
   useEffect(() => {
-    if (aiResponse) {
-      chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (invoiceAnalysis && onInvoiceAnalyzed) {
+      onInvoiceAnalyzed(invoiceAnalysis);
     }
-  }, [aiResponse]);
+  }, [invoiceAnalysis, onInvoiceAnalyzed]);
 
-  const handleFileUpload = () => {
-    // Simulate file selection
-    const dummyFile = new File(["dummy"], "repair_invoice_001.pdf", { type: "application/pdf" });
-    setInvoiceFile(dummyFile);
-    setIsUploading(true);
-    setUploadProgress(0);
-    setUploadStatus("Uploading document...");
-    
-    // Simulate detailed processing stages
-    const totalDuration = 2000;
-    const intervalTime = 50;
-    const steps = totalDuration / intervalTime;
-    let currentStep = 0;
-
-    const timer = setInterval(() => {
-      currentStep++;
-      const progress = Math.min((currentStep / steps) * 100, 100);
-      setUploadProgress(progress);
-
-      // Dynamic status updates
-      if (progress > 20 && progress < 50) setUploadStatus("Scanning text (OCR)...");
-      if (progress >= 50 && progress < 80) setUploadStatus("Matching line items to policy...");
-      if (progress >= 80) setUploadStatus("Verifying regional labor rates...");
-
-      if (currentStep >= steps) {
-        clearInterval(timer);
-        setTimeout(() => {
-          setIsUploading(false);
-          setShowAnalysis(true);
-        }, 300);
-      }
-    }, intervalTime);
+  const handleInvoiceUpload = async (files: File[]) => {
+    if (files.length === 0) return;
+    setIsAnalyzingInvoice(true);
+    await wait(2000);
+    // Select a random invoice scenario
+    setInvoiceAnalysis(getRandomItem(invoiceAnalysisResponses));
+    setIsAnalyzingInvoice(false);
   };
 
-  const handleAskAI = () => {
-    if (!aiQuery.trim()) return;
-    setIsTyping(true);
-    setAiResponse(null);
-    setTimeout(() => {
-        const dummy = generateDummyData();
-        setAiResponse(dummy.askAi);
-        setIsTyping(false);
-    }, 1200);
+  const getSeverityColor = (level: string) => {
+    switch(level) {
+      case 'Critical': return 'text-red-600 bg-red-100 dark:bg-red-900/30 dark:text-red-400';
+      case 'High': return 'text-orange-600 bg-orange-100 dark:bg-orange-900/30 dark:text-orange-400';
+      case 'Moderate': return 'text-yellow-600 bg-yellow-100 dark:bg-yellow-900/30 dark:text-yellow-400';
+      default: return 'text-green-600 bg-green-100 dark:bg-green-900/30 dark:text-green-400';
+    }
   };
 
-  if (!data || !invoiceData || !fnolData || !triageData) return null;
-
-  const container = {
-    hidden: { opacity: 0 },
-    show: { opacity: 1, transition: { staggerChildren: 0.1 } }
+  const getSeverityPercent = (level: string) => {
+    switch(level) {
+      case 'Critical': return 95;
+      case 'High': return 75;
+      case 'Moderate': return 50;
+      default: return 25;
+    }
   };
 
-  const item = {
-    hidden: { opacity: 0, y: 10 },
-    show: { opacity: 1, y: 0 }
-  };
-
-  const outstandingItems = data.checklist.filter(i => i.status === 'Pending').length;
+  if (!data) return <div className="h-96 flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-600"></div></div>;
 
   return (
-    <motion.div variants={container} initial="hidden" animate="show" className="relative space-y-6 max-w-6xl mx-auto pb-24">
+    <div className="max-w-6xl mx-auto space-y-8 page-transition pb-32">
+      <AIAutomationBanner />
       
-      {/* Policy Overview Card */}
-      <motion.div variants={item}>
-        <Card className="bg-white dark:bg-slate-900 border-l-4 border-l-indigo-500 shadow-sm">
-           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-              <div>
-                 <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-1">Pre-Investigation Dashboard</h2>
-                 <p className="text-sm text-slate-500">Claim ID: <span className="font-mono text-slate-700 dark:text-slate-300">{fnolData.id}</span></p>
-              </div>
-              <div className="flex flex-wrap gap-4 md:gap-8">
-                  <div className="flex items-center gap-2">
-                     <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
-                        <User className="w-4 h-4 text-slate-600 dark:text-slate-400" />
-                     </div>
-                     <div>
-                        <p className="text-xs text-slate-500">Policyholder</p>
-                        <p className="text-sm font-medium text-slate-900 dark:text-white">{fnolData.claimantName}</p>
-                     </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                     <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
-                        <FileText className="w-4 h-4 text-slate-600 dark:text-slate-400" />
-                     </div>
-                     <div>
-                        <p className="text-xs text-slate-500">Policy Number</p>
-                        <p className="text-sm font-medium font-mono text-slate-900 dark:text-white">{fnolData.policyNumber}</p>
-                     </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                     <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
-                        <Briefcase className="w-4 h-4 text-slate-600 dark:text-slate-400" />
-                     </div>
-                     <div>
-                        <p className="text-xs text-slate-500">Assigned Adjuster</p>
-                        <p className="text-sm font-medium text-slate-900 dark:text-white">{triageData.recommendedAdjuster}</p>
-                     </div>
-                  </div>
-              </div>
-           </div>
-        </Card>
-      </motion.div>
-
-      {/* Overview Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <motion.div variants={item}>
-            <Card>
-                <div className="flex items-center gap-3 mb-2">
-                    <div className="p-2 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
-                        <AlertCircle className="w-5 h-5 text-orange-600 dark:text-orange-400" />
-                    </div>
-                    <span className="font-medium text-slate-600 dark:text-slate-300">Severity</span>
-                </div>
-                <div className="text-2xl font-bold text-slate-900 dark:text-white">{data.severity}</div>
-            </Card>
-        </motion.div>
-        <motion.div variants={item}>
-            <Card>
-                <div className="flex items-center gap-3 mb-2">
-                    <div className="p-2 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg">
-                        <DollarSign className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
-                    </div>
-                    <span className="font-medium text-slate-600 dark:text-slate-300">Est. Cost Range</span>
-                </div>
-                <div className="text-2xl font-bold text-slate-900 dark:text-white">{data.estimatedCostRange}</div>
-            </Card>
-        </motion.div>
-        <motion.div variants={item}>
-            <Card>
-                <div className="flex items-center gap-3 mb-2">
-                    <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-                        <TrendingUp className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-                    </div>
-                    <span className="font-medium text-slate-600 dark:text-slate-300">Liability</span>
-                </div>
-                <div className="text-xl font-bold text-slate-900 dark:text-white truncate" title={data.liability}>{data.liability}</div>
-            </Card>
-        </motion.div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      {/* Top Grid: Investigation KPIs */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         
-        {/* Left Col: Checklist */}
-        <motion.div variants={item} className="h-full">
-            <Card className="h-full">
-                <div className="flex items-center justify-between mb-6">
-                    <h3 className="font-semibold text-lg flex items-center gap-2">
-                        <CheckSquare className="w-5 h-5 text-slate-400" />
-                        Investigation Checklist
-                    </h3>
-                    <Badge variant={outstandingItems > 0 ? 'warning' : 'success'}>
-                        {outstandingItems} Outstanding
-                    </Badge>
-                </div>
-                <div className="space-y-3">
-                    {data.checklist.map((item, i) => (
-                        <div key={i} className={`flex items-center gap-3 p-3 rounded-xl border transition-colors ${
-                            item.status === 'Pending' 
-                                ? 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 shadow-sm' 
-                                : 'bg-slate-50 dark:bg-slate-800/50 border-transparent opacity-75'
-                        }`}>
-                            <div className={`w-5 h-5 rounded-full flex items-center justify-center border-2 ${
-                                item.status === 'Complete' 
-                                    ? 'bg-emerald-100 dark:bg-emerald-900/30 border-emerald-500 text-emerald-600'
-                                    : item.status === 'Not Required'
-                                        ? 'bg-slate-200 dark:bg-slate-700 border-slate-300 text-slate-400'
-                                        : 'border-slate-300 dark:border-slate-500'
-                            }`}>
-                                {item.status === 'Complete' && <CheckCircle2 className="w-3 h-3" />}
-                                {item.status === 'Not Required' && <span className="block w-2 h-0.5 bg-slate-400"></span>}
-                            </div>
-                            <div className="flex-1">
-                                <span className={`text-sm font-medium ${item.status === 'Complete' ? 'text-slate-500 line-through' : 'text-slate-900 dark:text-white'}`}>
-                                    {item.task}
-                                </span>
-                            </div>
-                            {item.status === 'Pending' && <Badge variant="danger">Required</Badge>}
-                            {item.status === 'Not Required' && <span className="text-xs text-slate-400 italic">N/A</span>}
-                        </div>
-                    ))}
-                </div>
-            </Card>
-        </motion.div>
+        {/* Severity Card - Fixed */}
+        <div className="hover-card bg-white dark:bg-gray-800 p-5 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm col-span-1">
+           <div className="flex items-center gap-2 mb-2">
+             <AlertTriangle size={16} className="text-gray-500" />
+             <p className="text-xs text-gray-500 uppercase font-bold tracking-wider">Severity</p>
+           </div>
+           
+           <div className="flex items-end gap-2 mb-2">
+             <span className={`text-sm font-bold px-2 py-0.5 rounded ${getSeverityColor(data.severityLevel)}`}>
+               {data.severityLevel.toUpperCase()}
+             </span>
+             <span className="text-xs text-gray-400 mb-0.5">{getSeverityPercent(data.severityLevel)}% Impact</span>
+           </div>
+           
+           {/* Visual Bar */}
+           <div className="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-2 mb-3 overflow-hidden">
+             <div 
+               className={`h-full rounded-full animate-fill-bar ${
+                 data.severityLevel === 'Critical' ? 'bg-red-500' :
+                 data.severityLevel === 'High' ? 'bg-orange-500' :
+                 data.severityLevel === 'Moderate' ? 'bg-yellow-500' : 'bg-green-500'
+               }`} 
+               style={{ '--target-width': `${getSeverityPercent(data.severityLevel)}%` } as React.CSSProperties}
+             ></div>
+           </div>
 
-        {/* Right Col: Invoice Analyzer */}
-        <motion.div variants={item} className="h-full">
-            <Card className="h-full flex flex-col">
-                <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
-                    <FileText className="w-5 h-5 text-indigo-500" />
-                    Invoice Analyzer
-                </h3>
+           <ul className="space-y-1">
+             <li className="text-[10px] text-gray-500 flex items-center">
+               <span className="w-1 h-1 rounded-full bg-gray-400 mr-2"></span>
+               Based on damage analysis
+             </li>
+             <li className="text-[10px] text-gray-500 flex items-center">
+               <span className="w-1 h-1 rounded-full bg-gray-400 mr-2"></span>
+               Est. repair time: {data.severityLevel === 'Critical' ? '14+' : data.severityLevel === 'High' ? '7-10' : '3-5'} days
+             </li>
+           </ul>
+        </div>
 
-                {!showAnalysis ? (
-                   <div 
-                     onClick={!isUploading ? handleFileUpload : undefined}
-                     className={`
-                       flex-1 min-h-[250px] border-2 border-dashed rounded-xl flex flex-col items-center justify-center text-center p-6 transition-all duration-300 relative overflow-hidden
-                       ${isUploading 
-                         ? 'border-indigo-400 bg-indigo-50 dark:bg-indigo-900/10 cursor-wait' 
-                         : 'border-slate-300 dark:border-slate-700 hover:border-indigo-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer group'
-                       }
-                     `}
-                   >
-                     {isUploading ? (
-                       <div className="w-full max-w-xs z-10">
-                         <div className="flex items-center justify-between mb-2">
-                            <span className="text-xs font-semibold text-indigo-600 dark:text-indigo-400">{Math.round(uploadProgress)}%</span>
-                            <span className="text-xs text-slate-500 animate-pulse">{uploadStatus}</span>
-                         </div>
-                         <div className="h-2 w-full bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
-                            <motion.div 
-                              className="h-full bg-indigo-500 rounded-full"
-                              style={{ width: `${uploadProgress}%` }}
-                              transition={{ ease: "linear", duration: 0.1 }}
-                            />
-                         </div>
-                         <div className="mt-8 flex justify-center">
-                            <Sparkles className="w-8 h-8 text-indigo-400 animate-spin-slow" />
-                         </div>
-                       </div>
-                     ) : (
-                       <>
-                         <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform shadow-sm">
-                           <Upload className="w-8 h-8 text-slate-400 dark:text-slate-500" />
-                         </div>
-                         <h4 className="text-base font-medium text-slate-900 dark:text-white">Upload Repair Invoice</h4>
-                         <p className="text-sm text-slate-500 mt-2 mb-6">Drag and drop or click to browse<br/>PDF, JPG, or PNG up to 10MB</p>
-                         <Button size="sm" variant="outline" className="pointer-events-none">Select Document</Button>
-                       </>
-                     )}
+        <div className="hover-card bg-white dark:bg-gray-800 p-5 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm">
+           <div className="flex items-center gap-2 mb-2">
+             <DollarSign size={16} className="text-gray-500" />
+             <p className="text-xs text-gray-500 uppercase font-bold tracking-wider">Est. Cost</p>
+           </div>
+           <p className="text-xl font-mono font-bold text-gray-900 dark:text-gray-100 mt-2">
+             {formatCurrency(data.estimatedCostRange.min)}
+             <span className="text-gray-400 text-sm font-normal mx-1">-</span>
+             {formatCurrency(data.estimatedCostRange.max)}
+           </p>
+           <p className="text-[10px] text-gray-400 mt-1">Includes parts & labor</p>
+        </div>
+
+        <div className="hover-card bg-white dark:bg-gray-800 p-5 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm">
+           <div className="flex items-center gap-2 mb-2">
+             <TrendingUp size={16} className="text-gray-500" />
+             <p className="text-xs text-gray-500 uppercase font-bold tracking-wider">Liability</p>
+           </div>
+           <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5 mt-2 flex overflow-hidden">
+             <div className="bg-blue-500 h-2.5 animate-fill-bar shimmer-effect" style={{ '--target-width': `${data.liabilityAssessment.otherParty}%` } as React.CSSProperties}></div>
+             <div className="bg-brand-500 h-2.5 animate-fill-bar shimmer-effect" style={{ '--target-width': `${data.liabilityAssessment.claimant}%` } as React.CSSProperties}></div>
+           </div>
+           <div className="flex justify-between text-xs mt-1 text-gray-500">
+             <span>Other: {data.liabilityAssessment.otherParty}%</span>
+             <span>Client: {data.liabilityAssessment.claimant}%</span>
+           </div>
+        </div>
+
+        <div className="hover-card bg-white dark:bg-gray-800 p-5 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm">
+           <div className="flex items-center gap-2 mb-2">
+             <Sparkles size={16} className="text-brand-500" />
+             <p className="text-xs text-gray-500 uppercase font-bold tracking-wider">Confidence</p>
+           </div>
+           <div className="flex items-baseline text-brand-600 dark:text-brand-400 font-bold text-2xl mt-1">
+              {(data.confidence * 100).toFixed(0)}%
+           </div>
+           <p className="text-[10px] text-gray-400 mt-1">AI certainty score</p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        
+        {/* Left Column: Summary & Checklist */}
+        <div className="space-y-6">
+          <div className="hover-card bg-white dark:bg-gray-800 p-6 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm">
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Adjuster Summary</h3>
+            <p className="text-gray-600 dark:text-gray-300 leading-relaxed text-sm">
+              {data.adjusterSummary}
+            </p>
+            <div className="mt-6">
+              <h4 className="text-xs font-bold text-gray-500 uppercase mb-3">Recommended Actions</h4>
+              <ul className="space-y-2">
+                {data.recommendedActions.map((action, i) => (
+                  <li key={i} className="list-item-hover flex items-center text-sm text-gray-800 dark:text-gray-200 bg-gray-50 dark:bg-gray-900/50 p-2 rounded-lg animate-[slideInRight_0.4s_ease]" style={{ animationDelay: `${i * 0.1}s` }}>
+                    <Check className="w-4 h-4 mr-2 text-green-500" />
+                    {action}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+
+          {/* Missing Info Checklist */}
+          <div className="hover-card bg-orange-50 dark:bg-orange-900/10 p-6 rounded-2xl border border-orange-100 dark:border-orange-900/30">
+             <h3 className="text-lg font-bold text-orange-800 dark:text-orange-200 mb-4 flex items-center">
+               <AlertCircle className="w-5 h-5 mr-2" />
+               Missing Information
+             </h3>
+             {data.missingInfo.length > 0 ? (
+               <div className="space-y-3">
+                 {data.missingInfo.map((item, i) => (
+                   <label key={i} className="list-item-hover flex items-center p-3 bg-white dark:bg-gray-800 rounded-lg cursor-pointer transition-colors shadow-sm border border-transparent hover:border-orange-200">
+                     <input type="checkbox" className="w-4 h-4 text-orange-600 rounded border-gray-300 focus:ring-orange-500" />
+                     <span className="ml-3 text-sm font-medium text-gray-700 dark:text-gray-200">{item}</span>
+                   </label>
+                 ))}
+               </div>
+             ) : (
+               <p className="text-sm text-orange-700 dark:text-orange-300">All required documents have been collected.</p>
+             )}
+          </div>
+        </div>
+
+        {/* Right Column: Invoice Analyzer */}
+        <div className="space-y-6">
+          
+          {/* Enhanced Invoice Analyzer */}
+          <div className="hover-card bg-white dark:bg-gray-800 p-0 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm relative overflow-hidden h-full flex flex-col min-h-[500px]">
+             
+             {/* Header */}
+             <div className="p-6 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between bg-gray-50/50 dark:bg-gray-800/50">
+               <h3 className="text-lg font-bold text-gray-900 dark:text-white flex items-center">
+                 <FileText className="w-5 h-5 mr-2 text-brand-500" />
+                 Invoice Analyzer
+               </h3>
+               {invoiceAnalysis && <span className="text-xs bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300 px-3 py-1 rounded-full font-bold animate-[fadeIn_0.5s_ease]">AI Verified</span>}
+             </div>
+
+             <div className="p-6 flex-1 flex flex-col">
+               {!invoiceAnalysis ? (
+                 <>
+                   <div className="flex-1 flex flex-col justify-center">
+                     <FileUpload 
+                        accept=".pdf,.jpg,.png" 
+                        variant="invoice"
+                        label="Upload Repair Invoice"
+                        subLabel="PDF or Image scans"
+                        onFilesSelected={handleInvoiceUpload}
+                     />
                    </div>
-                ) : (
-                    // Analysis Result
-                    <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="flex-1 flex flex-col">
-                        <div className={`bg-slate-50 dark:bg-slate-800/50 rounded-xl border overflow-hidden mb-3 flex-1 ${invoiceData.anomalies.length > 0 ? 'border-rose-200 dark:border-rose-900/50' : 'border-emerald-200 dark:border-emerald-900/50'}`}>
-                            
-                            {/* Result Header */}
-                            <div className={`p-4 border-b flex justify-between items-center ${invoiceData.anomalies.length > 0 ? 'bg-rose-50 dark:bg-rose-900/20 border-rose-200 dark:border-rose-900/50' : 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-900/50'}`}>
-                                <div className="flex items-center gap-2">
-                                    {invoiceData.anomalies.length > 0 ? (
-                                        <AlertTriangle className="w-5 h-5 text-rose-600 dark:text-rose-400" />
-                                    ) : (
-                                        <FileCheck className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
-                                    )}
-                                    <span className="font-semibold text-sm text-slate-900 dark:text-white">
-                                        {invoiceData.anomalies.length > 0 ? 'Review Needed' : 'Invoice Approved'}
-                                    </span>
-                                </div>
-                                <span className="font-mono text-xs text-slate-500">repair_inv_001.pdf</span>
-                            </div>
-                            
-                            {/* Summary Section */}
-                            <div className="p-4 bg-white dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-700">
-                                <p className="text-sm text-slate-700 dark:text-slate-300 mb-2 leading-relaxed">
-                                    <strong className="text-slate-900 dark:text-white">Summary:</strong> {invoiceData.coverageSummary}
-                                </p>
-                                <div className="grid grid-cols-2 gap-4 mt-4">
-                                    <div className="bg-emerald-50/50 dark:bg-emerald-900/10 p-3 rounded-lg">
-                                        <p className="text-xs font-bold text-emerald-700 dark:text-emerald-400 mb-2 uppercase tracking-wide">Covered Items</p>
-                                        <ul className="space-y-1">
-                                            {invoiceData.coveredItems.map((ci, idx) => (
-                                                <li key={idx} className="text-xs text-emerald-900 dark:text-emerald-200 flex items-start gap-1.5">
-                                                    <CheckCircle2 className="w-3 h-3 mt-0.5 flex-shrink-0 opacity-70" />
-                                                    {ci}
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    </div>
-                                    <div className="bg-rose-50/50 dark:bg-rose-900/10 p-3 rounded-lg">
-                                        <p className="text-xs font-bold text-rose-700 dark:text-rose-400 mb-2 uppercase tracking-wide">Not Covered</p>
-                                        {invoiceData.nonCoveredItems.length > 0 ? (
-                                            <ul className="space-y-1">
-                                                {invoiceData.nonCoveredItems.map((nci, idx) => (
-                                                    <li key={idx} className="text-xs text-rose-900 dark:text-rose-200 flex items-start gap-1.5">
-                                                        <X className="w-3 h-3 mt-0.5 flex-shrink-0 opacity-70" />
-                                                        {nci}
-                                                    </li>
-                                                ))}
-                                            </ul>
-                                        ) : (
-                                            <span className="text-xs text-slate-400 italic">No exclusions found</span>
-                                        )}
-                                    </div>
-                                </div>
-                            </div>
+                   {isAnalyzingInvoice && (
+                     <div className="absolute inset-0 bg-white/90 dark:bg-gray-900/90 flex flex-col items-center justify-center z-10 backdrop-blur-sm animate-[fadeIn_0.3s_ease]">
+                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-600 mb-4"></div>
+                        <p className="text-base font-medium text-brand-600 animate-pulse">Matching Line Items to Policy...</p>
+                     </div>
+                   )}
+                 </>
+               ) : (
+                 <div className="animate-slide-up space-y-6">
+                   
+                   {/* 1. Policy Details Card */}
+                   <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl p-4 border border-blue-100 dark:border-blue-900/50">
+                      <div className="flex items-center gap-2 mb-2">
+                        <FileCheck size={16} className="text-blue-600 dark:text-blue-400" />
+                        <h4 className="text-xs font-bold uppercase tracking-wider text-blue-700 dark:text-blue-300">Policy Details Matched</h4>
+                      </div>
+                      <div className="grid grid-cols-2 gap-y-1 gap-x-4 text-sm text-gray-700 dark:text-gray-200">
+                         <div className="flex justify-between"><span>Policy #:</span> <span className="font-medium">{invoiceAnalysis.policy.policyNumber}</span></div>
+                         <div className="flex justify-between"><span>Coverage:</span> <span className="font-medium">{invoiceAnalysis.policy.coverageType}</span></div>
+                         <div className="flex justify-between"><span>Deductible:</span> <span className="font-medium">{formatCurrency(invoiceAnalysis.policy.deductible)}</span></div>
+                         <div className="flex justify-between"><span>Max Limit:</span> <span className="font-medium">{formatCurrency(invoiceAnalysis.policy.maxCoverage)}</span></div>
+                      </div>
+                   </div>
 
-                            <div className="p-4 bg-slate-50 dark:bg-slate-800/20 flex justify-between items-center">
-                                <span className="text-sm font-medium text-slate-600 dark:text-slate-400">Total Amount</span>
-                                <span className="text-lg font-bold text-slate-900 dark:text-white">${invoiceData.totalAmount.toFixed(2)}</span>
-                            </div>
-                            
-                            {invoiceData.anomalies.length > 0 && (
-                                <div className="bg-amber-50 dark:bg-amber-900/20 p-3 text-xs text-amber-800 dark:text-amber-200 border-t border-amber-100 dark:border-amber-900/30 flex gap-2">
-                                    <Sparkles className="w-4 h-4 flex-shrink-0 mt-0.5 text-amber-600" />
-                                    <div>
-                                        <strong>AI Insight:</strong> {invoiceData.anomalies[0]}
-                                    </div>
+                   {/* 2. Line Item Analysis Table */}
+                   <div className="overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700">
+                      <table className="w-full text-left text-sm">
+                        <thead className="bg-gray-50 dark:bg-gray-800 text-gray-500 uppercase text-xs">
+                          <tr>
+                            <th className="px-3 py-2">Item</th>
+                            <th className="px-3 py-2 text-right">Billed</th>
+                            <th className="px-3 py-2 text-center">Covered</th>
+                            <th className="px-3 py-2 text-right hidden sm:table-cell">Cust.</th>
+                            <th className="px-3 py-2 text-right hidden sm:table-cell">Ins.</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+                          {invoiceAnalysis.lineItems.map((item, idx) => (
+                            <tr key={idx} className={`hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors ${idx % 2 === 0 ? 'bg-white dark:bg-gray-900' : 'bg-gray-50/30 dark:bg-gray-800/30'}`}>
+                              <td className="px-3 py-2.5">
+                                <div className={`font-medium ${item.covered ? 'text-gray-900 dark:text-gray-100' : 'text-red-600 dark:text-red-400'}`}>
+                                  {item.description}
                                 </div>
-                            )}
-                        </div>
-                        <button 
-                          onClick={() => { setShowAnalysis(false); setInvoiceFile(null); }}
-                          className="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 mt-auto pt-2 flex items-center justify-center gap-1 transition-colors"
-                        >
-                          <X className="w-3 h-3" /> Upload Different Invoice
-                        </button>
-                    </motion.div>
-                )}
-            </Card>
-        </motion.div>
+                                {item.notes && <div className="text-[10px] text-gray-500 italic mt-0.5">{item.notes}</div>}
+                              </td>
+                              <td className="px-3 py-2.5 text-right font-mono text-gray-600 dark:text-gray-300">{formatCurrency(item.billed)}</td>
+                              <td className="px-3 py-2.5 text-center">
+                                {item.covered ? (
+                                  <span className="inline-flex items-center text-xs font-bold text-green-600 dark:text-green-400">
+                                    <Check size={12} className="mr-1"/> Yes
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center text-xs font-bold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 px-1.5 py-0.5 rounded">
+                                    <XCircle size={12} className="mr-1"/> No
+                                  </span>
+                                )}
+                              </td>
+                              <td className="px-3 py-2.5 text-right font-mono text-gray-500 hidden sm:table-cell">
+                                {item.customerPays > 0 ? formatCurrency(item.customerPays) : '-'}
+                              </td>
+                              <td className="px-3 py-2.5 text-right font-mono font-bold text-gray-900 dark:text-gray-100 hidden sm:table-cell">
+                                {item.insurerPays > 0 ? formatCurrency(item.insurerPays) : '-'}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                   </div>
+
+                   {/* 3. Payment Summary Cards */}
+                   <div className="grid grid-cols-2 gap-4">
+                      {/* Customer Pays */}
+                      <div className="p-4 rounded-2xl bg-gradient-to-br from-red-50 to-rose-50 dark:from-red-900/20 dark:to-rose-900/10 border border-red-100 dark:border-red-900/30 shadow-sm text-center transform transition-transform hover:scale-[1.02]">
+                         <p className="text-xs font-bold text-red-600 dark:text-red-400 uppercase tracking-wide mb-1">Customer Pays</p>
+                         <p className="text-2xl font-bold text-gray-900 dark:text-white mb-2">{formatCurrency(invoiceAnalysis.totals.customerPays)}</p>
+                         <div className="text-[10px] text-gray-500 space-y-1">
+                            <div className="flex justify-between px-2"><span>Deductible:</span> <span>{formatCurrency(invoiceAnalysis.totals.deductible)}</span></div>
+                            <div className="flex justify-between px-2"><span>Not Covered:</span> <span>{formatCurrency(invoiceAnalysis.totals.totalBilled - invoiceAnalysis.totals.totalCovered)}</span></div>
+                         </div>
+                      </div>
+
+                      {/* Insurer Pays */}
+                      <div className="p-4 rounded-2xl bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/10 border border-green-100 dark:border-green-900/30 shadow-sm text-center transform transition-transform hover:scale-[1.02]">
+                         <p className="text-xs font-bold text-green-600 dark:text-green-400 uppercase tracking-wide mb-1">Insurance Pays</p>
+                         <p className="text-2xl font-bold text-gray-900 dark:text-white mb-2">{formatCurrency(invoiceAnalysis.totals.insurerPays)}</p>
+                         <div className="text-[10px] text-gray-500 space-y-1">
+                            <div className="flex justify-between px-2"><span>Total Covered:</span> <span>{formatCurrency(invoiceAnalysis.totals.totalCovered)}</span></div>
+                            <div className="flex justify-between px-2"><span>Less Deductible:</span> <span>-{formatCurrency(invoiceAnalysis.totals.deductible)}</span></div>
+                         </div>
+                      </div>
+                   </div>
+
+                   {/* 4. AI Coverage Notes */}
+                   <div className="bg-amber-50/50 dark:bg-amber-900/10 p-4 rounded-xl border border-amber-100 dark:border-amber-900/30">
+                      <h4 className="text-xs font-bold text-amber-700 dark:text-amber-300 uppercase mb-2 flex items-center">
+                        <Sparkles size={12} className="mr-1.5"/> AI Coverage Analysis
+                      </h4>
+                      <ul className="space-y-1.5">
+                        {invoiceAnalysis.aiNotes.map((note, idx) => (
+                           <li key={idx} className="text-xs text-gray-600 dark:text-gray-300 flex items-start">
+                             <span className="mr-2 mt-0.5">•</span> {note}
+                           </li>
+                        ))}
+                      </ul>
+                   </div>
+
+                   <div className="flex gap-3 pt-2">
+                     <button className="flex-1 btn-primary-anim py-2.5 rounded-xl bg-brand-600 text-white font-medium shadow-md text-sm hover:bg-brand-700 flex items-center justify-center">
+                       <CheckCircle className="w-4 h-4 mr-2" />
+                       Approve Breakdown
+                     </button>
+                     <button 
+                       onClick={() => setInvoiceAnalysis(null)}
+                       className="px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 font-medium text-sm hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                     >
+                       Reset
+                     </button>
+                   </div>
+
+                 </div>
+               )}
+             </div>
+          </div>
+        </div>
+
       </div>
-
-      {/* Floating AI Assistant */}
-      <div className="fixed bottom-6 right-6 z-40 flex flex-col items-end pointer-events-none">
-          <AnimatePresence>
-            {isAiOpen && (
-                <motion.div
-                    initial={{ opacity: 0, scale: 0.9, y: 20 }}
-                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                    className="mb-4 w-[350px] bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden pointer-events-auto"
-                >
-                    {/* Header */}
-                    <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-4 flex items-center justify-between text-white">
-                        <div className="flex items-center gap-2">
-                            <Sparkles className="w-4 h-4" />
-                            <span className="font-medium text-sm">Claims Assistant</span>
-                        </div>
-                        <button onClick={() => setIsAiOpen(false)} className="opacity-80 hover:opacity-100 transition-opacity">
-                            <Minimize2 className="w-4 h-4" />
-                        </button>
-                    </div>
-
-                    {/* Chat Area */}
-                    <div className="h-[300px] overflow-y-auto p-4 bg-slate-50 dark:bg-slate-950/50 space-y-4">
-                        <div className="flex gap-3">
-                             <div className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center flex-shrink-0">
-                                 <Sparkles className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-                             </div>
-                             <div className="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 p-3 rounded-2xl rounded-tl-none text-sm text-slate-600 dark:text-slate-300 shadow-sm">
-                                 Hello! I've analyzed the policy and incoming evidence. How can I help with this claim?
-                             </div>
-                        </div>
-
-                        {aiResponse && (
-                             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex gap-3">
-                                <div className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center flex-shrink-0">
-                                    <Sparkles className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-                                </div>
-                                <div className="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 p-3 rounded-2xl rounded-tl-none text-sm text-slate-600 dark:text-slate-300 shadow-sm">
-                                    {aiResponse}
-                                </div>
-                            </motion.div>
-                        )}
-
-                        {isTyping && (
-                             <div className="flex gap-3">
-                                <div className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center flex-shrink-0">
-                                    <Sparkles className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-                                </div>
-                                <div className="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 p-3 rounded-2xl rounded-tl-none text-sm text-slate-400 shadow-sm flex gap-1">
-                                    <span className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce"></span>
-                                    <span className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce delay-100"></span>
-                                    <span className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce delay-200"></span>
-                                </div>
-                            </div >
-                        )}
-                        <div ref={chatEndRef} />
-                    </div>
-
-                    {/* Input Area */}
-                    <div className="p-3 bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 flex gap-2">
-                        <input 
-                          type="text" 
-                          placeholder="Ask anything..."
-                          value={aiQuery}
-                          onChange={(e) => setAiQuery(e.target.value)}
-                          onKeyDown={(e) => e.key === 'Enter' && handleAskAI()}
-                          className="flex-1 bg-slate-100 dark:bg-slate-800 border-none rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none dark:text-white"
-                        />
-                        <button 
-                            onClick={handleAskAI}
-                            disabled={!aiQuery.trim() || isTyping}
-                            className="p-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 transition-colors"
-                        >
-                            <Send className="w-4 h-4" />
-                        </button>
-                    </div>
-                </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* Toggle Button */}
-          <motion.button 
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => setIsAiOpen(!isAiOpen)}
-            className={`
-                pointer-events-auto
-                w-14 h-14 rounded-full shadow-xl flex items-center justify-center transition-all duration-300
-                ${isAiOpen 
-                    ? 'bg-slate-800 dark:bg-slate-700 text-white rotate-90' 
-                    : 'bg-indigo-600 text-white hover:bg-indigo-700'
-                }
-            `}
-          >
-              {isAiOpen ? <X className="w-6 h-6" /> : <Sparkles className="w-6 h-6" />}
-          </motion.button>
-      </div>
-
-    </motion.div>
+    </div>
   );
 };
+
+export default Step3_Investigation;

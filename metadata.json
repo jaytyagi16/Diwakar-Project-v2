@@ -1,6 +1,6 @@
 {
-  "name": "Copy of ClaimsFlow AI",
-  "description": "Enterprise-grade AI Claims Processing Dashboard featuring a modern, minimal UI with simulated AI agents for FNOL, Triage, and Investigation.",
+  "name": "ClaimsFlow AI",
+  "description": "Enterprise-grade vehicle insurance claims processing platform featuring AI-driven triage, real-time file analysis, and modern UI/UX.",
   "requestFramePermissions": [
     "microphone"
   ]

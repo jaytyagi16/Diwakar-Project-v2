@@ -1,182 +1,208 @@
-
-import React, { useState, useEffect } from 'react';
-import { ShieldAlert, AlertTriangle, UserCheck, Sparkles, ArrowRight, FileText, Car, CreditCard, Hash } from 'lucide-react';
-import { Card } from './ui/Card';
-import { Button } from './ui/Button';
-import { Badge } from './ui/Badge';
-import { generateDummyData } from '../data/dummyData';
-import { TriageData, FNOLData } from '../types';
-import { motion } from 'framer-motion';
+import React, { useEffect, useState } from 'react';
+import { ShieldAlert, Activity, UserCheck, ArrowRight, BrainCircuit, CheckCircle2, AlertTriangle, Clock } from 'lucide-react';
+import { TriageResponse, FnolResponse } from '../types';
+import { triageResponses } from '../data/dummyData';
+import { getRandomItem } from '../utils/helpers';
 
 interface Step2Props {
-  onNext: () => void;
+  fnolData: FnolResponse;
+  onComplete: (data: TriageResponse) => void;
 }
 
-export const Step2_Triage: React.FC<Step2Props> = ({ onNext }) => {
-  const [data, setData] = useState<TriageData | null>(null);
-  const [fnolData, setFnolData] = useState<FNOLData | null>(null);
+const Step2_Triage: React.FC<Step2Props> = ({ fnolData, onComplete }) => {
+  const [data, setData] = useState<TriageResponse | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Simulate loading data
-    const dummy = generateDummyData();
-    setData(dummy.triage);
-    setFnolData(dummy.fnol);
+    const timer = setTimeout(() => {
+      setData(getRandomItem(triageResponses));
+      setLoading(false);
+    }, 1500);
+    return () => clearTimeout(timer);
   }, []);
 
-  if (!data || !fnolData) return null;
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64 space-y-4">
+        <div className="relative w-16 h-16">
+           <div className="absolute inset-0 rounded-full border-4 border-gray-200 opacity-25"></div>
+           <div className="absolute inset-0 rounded-full border-4 border-brand-500 border-t-transparent animate-spin"></div>
+        </div>
+        <p className="text-gray-500 font-medium animate-pulse">Running Fraud Detection Algorithms...</p>
+      </div>
+    );
+  }
 
-  const container = {
-    hidden: { opacity: 0 },
-    show: {
-      opacity: 1,
-      transition: { staggerChildren: 0.1 }
-    }
-  };
-
-  const item = {
-    hidden: { opacity: 0, y: 20 },
-    show: { opacity: 1, y: 0 }
-  };
+  if (!data) return null;
 
   return (
-    <motion.div variants={container} initial="hidden" animate="show" className="space-y-6 max-w-5xl mx-auto">
+    <div className="max-w-5xl mx-auto space-y-8 page-transition pb-20">
       
-      <motion.div variants={item} className="text-center mb-8">
-        <h2 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-white mb-2">AI Triage Analysis</h2>
-        <div className="flex items-center justify-center gap-2">
-          <Badge variant="success" className="bg-emerald-100 text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-300">
-             Confidence Score: {data.confidence}%
-          </Badge>
-          <span className="text-sm text-slate-500">Analysis completed in 1.2s</span>
+      {/* Header */}
+      <div className="flex justify-between items-end">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Claim Triage & Scoring</h2>
+          <p className="text-gray-500 dark:text-gray-400 mt-1">AI assessment based on intake data for claim #{fnolData.id}</p>
         </div>
-      </motion.div>
-
-      {/* Policy Details Card (New Feature) */}
-      <motion.div variants={item}>
-        <Card className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
-            <div className="flex items-center gap-2 mb-4">
-                <div className="p-1.5 bg-indigo-100 dark:bg-indigo-900/30 rounded-md">
-                    <FileText className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-                </div>
-                <h3 className="font-semibold text-slate-800 dark:text-slate-200">Policy Details</h3>
-            </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                <div>
-                    <p className="text-xs text-slate-500 uppercase tracking-wide font-medium mb-1">Policyholder</p>
-                    <p className="text-sm font-semibold text-slate-900 dark:text-white">{fnolData.claimantName}</p>
-                </div>
-                <div>
-                    <p className="text-xs text-slate-500 uppercase tracking-wide font-medium mb-1 flex items-center gap-1"><Hash className="w-3 h-3" /> Policy Number</p>
-                    <p className="text-sm font-mono text-slate-700 dark:text-slate-300">{fnolData.policyNumber}</p>
-                </div>
-                <div>
-                    <p className="text-xs text-slate-500 uppercase tracking-wide font-medium mb-1 flex items-center gap-1"><Car className="w-3 h-3" /> Insured Item</p>
-                    <p className="text-sm text-slate-700 dark:text-slate-300">{fnolData.vehicleDetails}</p>
-                </div>
-                <div>
-                    <p className="text-xs text-slate-500 uppercase tracking-wide font-medium mb-1 flex items-center gap-1"><CreditCard className="w-3 h-3" /> Coverage Type</p>
-                    <Badge variant="info">{fnolData.policyType}</Badge>
-                </div>
-            </div>
-        </Card>
-      </motion.div>
-
-      {/* Top 3 Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        
-        {/* Fraud Score */}
-        <motion.div variants={item}>
-            <Card className="h-full relative overflow-hidden bg-gradient-to-br from-white to-rose-50/50 dark:from-slate-900 dark:to-rose-900/10 border-rose-100 dark:border-rose-900/30">
-            <div className="absolute top-0 right-0 p-4 opacity-10">
-                <ShieldAlert className="w-24 h-24 text-rose-500" />
-            </div>
-            <div className="relative z-10">
-                <div className="flex items-center gap-2 mb-3">
-                <div className="p-2 bg-rose-100 dark:bg-rose-900/50 rounded-lg">
-                    <ShieldAlert className="w-5 h-5 text-rose-600 dark:text-rose-400" />
-                </div>
-                <h3 className="font-semibold text-slate-800 dark:text-slate-100">Fraud Risk</h3>
-                </div>
-                <div className="text-4xl font-bold text-slate-900 dark:text-white mb-2">{data.fraudScore}<span className="text-xl text-slate-400 font-normal">/100</span></div>
-                <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
-                {data.fraudReasoning}
-                </p>
-            </div>
-            </Card>
-        </motion.div>
-
-        {/* Complexity */}
-        <motion.div variants={item}>
-            <Card className="h-full relative overflow-hidden bg-gradient-to-br from-white to-sky-50/50 dark:from-slate-900 dark:to-sky-900/10 border-sky-100 dark:border-sky-900/30">
-            <div className="absolute top-0 right-0 p-4 opacity-10">
-                <AlertTriangle className="w-24 h-24 text-sky-500" />
-            </div>
-            <div className="relative z-10">
-                <div className="flex items-center gap-2 mb-3">
-                <div className="p-2 bg-sky-100 dark:bg-sky-900/50 rounded-lg">
-                    <AlertTriangle className="w-5 h-5 text-sky-600 dark:text-sky-400" />
-                </div>
-                <h3 className="font-semibold text-slate-800 dark:text-slate-100">Complexity</h3>
-                </div>
-                <div className="text-4xl font-bold text-slate-900 dark:text-white mb-2">{data.complexity}</div>
-                <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
-                {data.complexity === 'High' ? 'Requires specialist review.' : 'Standard claims processing.'}
-                </p>
-            </div>
-            </Card>
-        </motion.div>
-
-        {/* Adjuster */}
-        <motion.div variants={item}>
-            <Card className="h-full relative overflow-hidden bg-gradient-to-br from-white to-purple-50/50 dark:from-slate-900 dark:to-purple-900/10 border-purple-100 dark:border-purple-900/30">
-            <div className="absolute top-0 right-0 p-4 opacity-10">
-                <UserCheck className="w-24 h-24 text-purple-500" />
-            </div>
-            <div className="relative z-10">
-                <div className="flex items-center gap-2 mb-3">
-                <div className="p-2 bg-purple-100 dark:bg-purple-900/50 rounded-lg">
-                    <UserCheck className="w-5 h-5 text-purple-600 dark:text-purple-400" />
-                </div>
-                <h3 className="font-semibold text-slate-800 dark:text-slate-100">Assignment</h3>
-                </div>
-                <div className="text-xl font-bold text-slate-900 dark:text-white mb-1">{data.recommendedAdjuster}</div>
-                <Badge variant="purple" className="mb-2">{data.adjusterSpecialty}</Badge>
-                <p className="text-sm text-slate-600 dark:text-slate-400">
-                 Best match based on workload and expertise.
-                </p>
-            </div>
-            </Card>
-        </motion.div>
+        <div className="hidden md:flex items-center space-x-2 bg-brand-50 dark:bg-brand-900/30 px-3 py-1.5 rounded-full border border-brand-100 dark:border-brand-900 shadow-sm">
+           <BrainCircuit size={16} className="text-brand-600 dark:text-brand-400" />
+           <span className="text-sm font-semibold text-brand-700 dark:text-brand-300">AI Confidence: {(data.confidence * 100).toFixed(0)}%</span>
+        </div>
       </div>
 
-      {/* AI Reasoning */}
-      <motion.div variants={item}>
-        <Card className="bg-slate-50 dark:bg-slate-900/50">
-            <div className="flex items-start gap-4">
-                <div className="p-2 bg-indigo-100 dark:bg-indigo-900/30 rounded-full mt-1">
-                    <Sparkles className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
-                </div>
-                <div>
-                    <h3 className="font-medium text-slate-900 dark:text-white mb-1">AI Reasoning Engine</h3>
-                    <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed">
-                        {data.aiReasoning} The system analyzed 12 datapoints including historical patterns, geolocation metadata, and policy constraints. 
-                        Recommendation is to proceed to direct investigation.
-                    </p>
-                </div>
+      {/* Metric Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        
+        {/* Fraud Score Card */}
+        <div className={`
+          hover-card relative overflow-hidden p-6 rounded-2xl border 
+          bg-gradient-to-br from-white to-red-50 dark:from-gray-800 dark:to-red-900/20
+          ${data.fraudRiskLevel === 'High' ? 'border-red-200 dark:border-red-800 shadow-red-100 dark:shadow-none' : 'border-gray-200 dark:border-gray-700'}
+        `}>
+          <div className="flex justify-between items-start mb-4">
+            <div className="p-2 bg-red-100 dark:bg-red-900/30 rounded-lg shadow-inner">
+              <ShieldAlert className="w-6 h-6 text-red-600 dark:text-red-400" />
             </div>
-        </Card>
-      </motion.div>
+            <span className={`px-2 py-1 rounded text-xs font-bold uppercase shadow-sm
+              ${data.fraudRiskLevel === 'High' ? 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300 animate-pulse' : 'bg-green-100 text-green-700'}
+            `}>
+              {data.fraudRiskLevel} Risk
+            </span>
+          </div>
+          <div className="space-y-2">
+            <p className="text-sm text-gray-500">Fraud Probability Score</p>
+            <div className="flex items-baseline space-x-2">
+              <span className="text-4xl font-bold text-gray-900 dark:text-white">{data.fraudScore}</span>
+              <span className="text-gray-400">/ 100</span>
+            </div>
+            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5 overflow-hidden">
+               <div 
+                 className={`h-full rounded-full animate-fill-bar shimmer-effect ${data.fraudScore > 50 ? 'bg-red-500' : 'bg-green-500'}`} 
+                 style={{ '--target-width': `${data.fraudScore}%` } as React.CSSProperties}
+               ></div>
+            </div>
+          </div>
+        </div>
 
-      <motion.div variants={item} className="flex justify-end pt-4">
-        <Button 
-          onClick={onNext} 
-          variant="secondary"
-          className="w-full md:w-auto px-8"
-          icon={<ArrowRight className="w-4 h-4" />}
-        >
-          Continue to Adjuster View
-        </Button>
-      </motion.div>
-    </motion.div>
+        {/* Complexity Card */}
+        <div className="hover-card relative overflow-hidden p-6 rounded-2xl border border-blue-100 dark:border-blue-900 bg-gradient-to-br from-white to-blue-50 dark:from-gray-800 dark:to-blue-900/20">
+           <div className="flex justify-between items-start mb-4">
+            <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg shadow-inner">
+              <Activity className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+            </div>
+            <span className="px-2 py-1 rounded text-xs font-bold uppercase bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300 shadow-sm">
+              {data.complexityLevel} Complexity
+            </span>
+          </div>
+          <div className="space-y-2">
+            <p className="text-sm text-gray-500">Complexity Index</p>
+            <div className="flex items-baseline space-x-2">
+              <span className="text-4xl font-bold text-gray-900 dark:text-white">{data.complexityScore}</span>
+              <span className="text-gray-400">/ 10</span>
+            </div>
+             <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5 overflow-hidden">
+               <div 
+                 className="h-full bg-blue-500 rounded-full animate-fill-bar shimmer-effect"
+                 style={{ '--target-width': `${data.complexityScore * 10}%` } as React.CSSProperties}
+               ></div>
+            </div>
+          </div>
+        </div>
+
+        {/* Adjuster Card */}
+        <div className="hover-card relative overflow-hidden p-6 rounded-2xl border border-purple-100 dark:border-purple-900 bg-gradient-to-br from-white to-purple-50 dark:from-gray-800 dark:to-purple-900/20">
+           <div className="flex justify-between items-start mb-4">
+            <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg shadow-inner">
+              <UserCheck className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+            </div>
+            <span className="px-2 py-1 rounded text-xs font-bold uppercase bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300 shadow-sm">
+              Recommended
+            </span>
+          </div>
+          <div>
+            <p className="text-sm text-gray-500 mb-1">Assigned Adjuster</p>
+            <p className="text-xl font-bold text-gray-900 dark:text-white truncate">{data.recommendedAdjuster.name}</p>
+            <div className="mt-3 flex flex-wrap gap-2">
+               <span className="text-xs bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 px-2 py-1 rounded text-gray-600 dark:text-gray-300 shadow-sm">
+                 {data.recommendedAdjuster.expertise}
+               </span>
+                <span className="text-xs bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 px-2 py-1 rounded text-gray-600 dark:text-gray-300 shadow-sm">
+                 {data.recommendedAdjuster.workload} Load
+               </span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      {/* Deep Dive Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        {/* Left: AI Reasoning */}
+        <div className="lg:col-span-2 space-y-6">
+          <div className="hover-card bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-[0_4px_12px_rgba(0,0,0,0.05)] border border-gray-100 dark:border-gray-700">
+             <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center">
+               <BrainCircuit className="w-5 h-5 mr-2 text-brand-500" />
+               AI Analysis & Reasoning
+             </h3>
+             <div className="prose dark:prose-invert max-w-none text-gray-600 dark:text-gray-300 text-sm leading-relaxed">
+               <p className="mb-4">{data.aiReasoning}</p>
+               <div className="bg-gray-50 dark:bg-gray-900 p-4 rounded-xl border border-gray-100 dark:border-gray-800">
+                 <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-2 text-xs uppercase tracking-wider">Detected Risk Factors</h4>
+                 {data.fraudIndicators.length > 0 ? (
+                   <ul className="space-y-2">
+                     {data.fraudIndicators.map((indicator, idx) => (
+                       <li key={idx} className="list-item-hover flex items-start text-sm text-red-600 dark:text-red-400 p-1 rounded-lg animate-[fadeIn_0.5s_ease]" style={{ animationDelay: `${idx * 0.1}s` }}>
+                         <AlertTriangle className="w-4 h-4 mr-2 mt-0.5 shrink-0" />
+                         {indicator}
+                       </li>
+                     ))}
+                   </ul>
+                 ) : (
+                   <div className="flex items-center text-green-600 dark:text-green-400 text-sm">
+                      <CheckCircle2 className="w-4 h-4 mr-2" />
+                      No significant risk factors detected.
+                   </div>
+                 )}
+               </div>
+             </div>
+          </div>
+        </div>
+
+        {/* Right: Status */}
+        <div className="space-y-6">
+           <div className="hover-card bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-[0_4px_12px_rgba(0,0,0,0.05)] border border-gray-100 dark:border-gray-700">
+             <h3 className="text-sm font-bold text-gray-900 dark:text-white uppercase tracking-wider mb-4">Triage Status</h3>
+             
+             <div className="space-y-4">
+                <div className="flex justify-between items-center py-2 border-b border-gray-100 dark:border-gray-700">
+                   <span className="text-sm text-gray-500">Priority Level</span>
+                   <span className={`text-sm font-bold px-2 py-0.5 rounded ${data.priorityLevel === 'Critical' ? 'bg-red-100 text-red-600 animate-pulse' : 'text-gray-900 dark:text-white'}`}>
+                     {data.priorityLevel}
+                   </span>
+                </div>
+                 <div className="flex justify-between items-center py-2 border-b border-gray-100 dark:border-gray-700">
+                   <span className="text-sm text-gray-500">Processing Time</span>
+                   <div className="flex items-center text-sm font-medium text-gray-900 dark:text-white">
+                      <Clock className="w-4 h-4 mr-1 text-gray-400" />
+                      {data.estimatedProcessingTime}
+                   </div>
+                </div>
+             </div>
+
+             <button 
+               onClick={() => onComplete(data)}
+               className="btn-primary-anim w-full mt-8 bg-gray-900 dark:bg-brand-600 text-white font-medium py-3 rounded-xl hover:bg-gray-800 dark:hover:bg-brand-500 transition-colors shadow-lg flex items-center justify-center group"
+             >
+               Start Investigation
+               <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
+             </button>
+           </div>
+        </div>
+
+      </div>
+    </div>
   );
 };
+
+export default Step2_Triage;

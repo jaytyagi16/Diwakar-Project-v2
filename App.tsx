@@ -1,133 +1,241 @@
 
 import React, { useState } from 'react';
-import { Layout, GitBranch, Search, ChevronRight, Sun, Moon } from 'lucide-react';
-import { Step1_FNOL } from './components/Step1_FNOL';
-import { Step2_Triage } from './components/Step2_Triage';
-import { Step3_Investigation } from './components/Step3_Investigation';
-import { Step } from './types';
-import { motion, AnimatePresence } from 'framer-motion';
+import { Car, Moon, Sun, Bell } from 'lucide-react';
+import { useTheme } from './ThemeContext';
+import Stepper from './components/Stepper';
+import Step1_FNOL from './components/Step1_FNOL';
+import Step2_Triage from './components/Step2_Triage';
+import Step3_Investigation from './components/Step3_Investigation';
+import Step4_Settlement from './components/Step4_Settlement';
+import FloatingChat from './components/FloatingChat';
+import QuickActions from './components/QuickActions';
+import Toast from './components/Toast';
+import { FnolResponse, TriageResponse, InvoiceAnalysisResponse, ToastMessage } from './types';
 
-const App: React.FC = () => {
-  const [currentStep, setCurrentStep] = useState<Step>('FNOL');
-  const [isDarkMode, setIsDarkMode] = useState(false);
+function App() {
+  const { theme, toggleTheme } = useTheme();
+  
+  // Navigation State
+  const [currentStep, setCurrentStep] = useState(1);
+  
+  // Data State
+  const [fnolData, setFnolData] = useState<FnolResponse | null>(null);
+  const [triageData, setTriageData] = useState<TriageResponse | null>(null);
+  const [invoiceAnalysis, setInvoiceAnalysis] = useState<InvoiceAnalysisResponse | null>(null);
+  
+  // Toast State
+  const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
-  const steps: Step[] = ['FNOL', 'Triage', 'Pre-Investigation'];
-
-  const toggleTheme = () => {
-    setIsDarkMode(!isDarkMode);
-    document.documentElement.classList.toggle('dark');
+  const addToast = (message: string, type: 'success' | 'error' | 'info' = 'success') => {
+    const id = Date.now().toString();
+    setToasts(prev => [...prev, { id, message, type }]);
   };
 
-  const getStepIcon = (step: Step) => {
-    switch (step) {
-      case 'FNOL': return <Layout className="w-4 h-4" />;
-      case 'Triage': return <GitBranch className="w-4 h-4" />;
-      case 'Pre-Investigation': return <Search className="w-4 h-4" />;
+  const removeToast = (id: string) => {
+    setToasts(prev => prev.filter(t => t.id !== id));
+  };
+
+  const handleAction = (actionName: string) => {
+    const messages: Record<string, string> = {
+      'Request Docs': '📄 Document request sent to claimant.',
+      'Call Claimant': '📞 Dialing claimant...',
+      'Reassign': '🔄 Reassignment workflow initiated.',
+      'Order Appraisal': '🚗 Appraisal ordered successfully.',
+      'Flag SIU': '⚠️ Claim flagged for Special Investigation Unit.',
+      'Add Note': '📝 Note added to claim file.'
+    };
+    
+    addToast(messages[actionName] || `Action: ${actionName} triggered`, actionName === 'Flag SIU' ? 'info' : 'success');
+  };
+
+  const handleFnolComplete = (data: FnolResponse) => {
+    setFnolData(data);
+    setCurrentStep(2);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleTriageComplete = (data: TriageResponse) => {
+    setTriageData(data);
+    setCurrentStep(3);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleInvestigationComplete = () => {
+    setCurrentStep(4);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleRestart = () => {
+    setCurrentStep(1);
+    setFnolData(null);
+    setTriageData(null);
+    setInvoiceAnalysis(null);
+    window.scrollTo(0, 0);
+  };
+
+  // Dynamic Persona Logic
+  const getCurrentPersona = () => {
+    switch (currentStep) {
+      case 1:
+        return {
+          name: "Sarah Mitchell",
+          role: "Policyholder",
+          action: "Filing new claim",
+          avatarColor: "from-emerald-400 to-green-600",
+          badgeColor: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
+        };
+      case 2:
+        return {
+          name: "Michael Chen",
+          role: "Claims Manager",
+          action: "Reviewing & Assigning",
+          avatarColor: "from-amber-400 to-orange-600",
+          badgeColor: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
+        };
+      case 3:
+      case 4:
+        return {
+          name: triageData?.recommendedAdjuster.name || "Alex Morgan",
+          role: "Senior Adjuster",
+          action: currentStep === 3 ? "Investigation" : "Settlement",
+          avatarColor: "from-brand-500 to-purple-600",
+          badgeColor: "bg-brand-50 text-brand-700 dark:bg-brand-900/30 dark:text-brand-400"
+        };
+      default:
+        return {
+          name: "Alex Morgan",
+          role: "Senior Adjuster",
+          action: "View Mode",
+          avatarColor: "from-brand-500 to-purple-600",
+          badgeColor: "bg-gray-100 text-gray-700"
+        };
     }
   };
 
+  const persona = getCurrentPersona();
+
   return (
-    <div className={`min-h-screen font-sans selection:bg-indigo-100 selection:text-indigo-900 ${isDarkMode ? 'dark' : ''}`}>
+    <div className="min-h-screen flex flex-col font-sans transition-colors duration-300">
       
-      {/* Top Navigation Bar */}
-      <header className="fixed top-0 left-0 right-0 h-16 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 z-50">
-        <div className="max-w-7xl mx-auto px-4 h-full flex items-center justify-between">
-          
-          <div className="flex items-center gap-3">
-             <div className="w-8 h-8 bg-gradient-to-tr from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center shadow-lg shadow-indigo-500/20">
-                <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                </svg>
-             </div>
-             <span className="font-bold text-lg text-slate-900 dark:text-white tracking-tight">ClaimsFlow AI</span>
-          </div>
+      {/* Toast Container */}
+      <div className="fixed top-20 right-4 z-[200] flex flex-col items-end pointer-events-none">
+        {toasts.map(toast => (
+          <Toast key={toast.id} toast={toast} onClose={removeToast} />
+        ))}
+      </div>
 
-          <div className="hidden md:flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-full">
-            {steps.map((step, index) => {
-              const isActive = currentStep === step;
-              const isPast = steps.indexOf(currentStep) > index;
+      {/* Navigation Bar */}
+      <header className="sticky top-0 z-50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-800 transition-colors duration-300">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            
+            {/* Logo */}
+            <div className="flex items-center space-x-3 group cursor-pointer" onClick={handleRestart}>
+              <div className="bg-brand-600 p-2 rounded-xl group-hover:bg-brand-700 transition-all duration-300 group-hover:scale-105 shadow-md group-hover:shadow-brand-500/30">
+                <Car className="h-6 w-6 text-white" />
+              </div>
+              <div>
+                <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-300">
+                  ClaimsFlow AI
+                </h1>
+                <p className="text-[10px] font-medium tracking-wider text-gray-500 uppercase">Enterprise Edition</p>
+              </div>
+            </div>
+
+            {/* Middle: Claim ID (only in flow) */}
+            {fnolData && (
+              <div className="hidden lg:flex items-center px-4 py-1.5 bg-gray-100 dark:bg-gray-800 rounded-full border border-gray-200 dark:border-gray-700 animate-[fadeIn_0.5s_ease]">
+                <span className="text-xs font-mono text-gray-500 dark:text-gray-400 mr-2">CLAIM ID</span>
+                <span className="text-sm font-bold text-gray-900 dark:text-white">{fnolData.id}</span>
+              </div>
+            )}
+
+            {/* Right Actions */}
+            <div className="flex items-center space-x-4">
               
-              return (
-                <div key={step} className="flex items-center">
-                   <button
-                    onClick={() => setCurrentStep(step)}
-                    className={`
-                      relative px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-300 flex items-center gap-2
-                      ${isActive 
-                        ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm ring-1 ring-black/5 dark:ring-white/10' 
-                        : isPast 
-                          ? 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white' 
-                          : 'text-slate-400 dark:text-slate-600 cursor-not-allowed'
-                      }
-                    `}
-                    disabled={!isPast && !isActive}
-                   >
-                     {getStepIcon(step)}
-                     {step}
-                     {isActive && (
-                        <motion.div 
-                          layoutId="active-pill"
-                          className="absolute inset-0 bg-transparent rounded-full" 
-                          transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
-                        />
-                     )}
-                   </button>
-                   {index < steps.length - 1 && (
-                     <div className="px-2 text-slate-300 dark:text-slate-700">
-                       <ChevronRight className="w-3 h-3" />
-                     </div>
-                   )}
+              {/* Dynamic Persona Block */}
+              <div className="hidden md:flex flex-col items-end mr-2 animate-[fadeIn_0.5s_ease]">
+                <div className="flex items-center gap-2 mb-0.5">
+                   <span className="text-sm font-bold text-gray-900 dark:text-gray-100 transition-all">{persona.name}</span>
+                   <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider transition-colors shadow-sm ${persona.badgeColor}`}>
+                     {persona.role}
+                   </span>
                 </div>
-              );
-            })}
-          </div>
+                <div className="flex items-center text-xs text-gray-500 dark:text-gray-400">
+                   {currentStep === 1 && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5 animate-pulse"></span>}
+                   {currentStep === 2 && <span className="w-1.5 h-1.5 rounded-full bg-amber-500 mr-1.5 animate-pulse"></span>}
+                   {currentStep >= 3 && <span className="w-1.5 h-1.5 rounded-full bg-purple-500 mr-1.5 animate-pulse"></span>}
+                   {persona.action}
+                </div>
+              </div>
 
-          <div className="flex items-center gap-4">
-             {/* Persona Banner */}
-             <div className="hidden sm:flex flex-col items-end mr-4">
-                <span className="text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">Current Persona</span>
-                <span className="text-sm font-medium text-slate-900 dark:text-white">
-                  {currentStep === 'FNOL' ? 'Insured Customer' : 'Senior Adjuster'}
-                </span>
-             </div>
-             
-             <button 
+              {/* Dynamic Avatar */}
+              <div className={`h-9 w-9 rounded-full bg-gradient-to-tr ${persona.avatarColor} border-2 border-white dark:border-gray-800 shadow-sm transition-all duration-500 ring-2 ring-transparent group-hover:ring-brand-200 transform hover:scale-110`}></div>
+              
+              <div className="h-6 w-px bg-gray-200 dark:bg-gray-700 mx-2"></div>
+
+              <button className="shake-hover p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors relative">
+                <Bell size={20} />
+                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border border-white dark:border-gray-900 animate-[pulse_3s_infinite]"></span>
+              </button>
+
+              <button 
                 onClick={toggleTheme}
-                className="p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors"
-             >
-                {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-             </button>
-             
-             <div className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 overflow-hidden">
-                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" alt="User" />
-             </div>
+                className="rotate-hover p-2 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-all focus:outline-none focus:ring-2 focus:ring-brand-500"
+                aria-label="Toggle Dark Mode"
+              >
+                {theme === 'light' ? <Moon size={20} /> : <Sun size={20} />}
+              </button>
+            </div>
           </div>
         </div>
       </header>
 
-      {/* Main Content Area */}
-      <main className="pt-24 pb-12 px-4 max-w-7xl mx-auto">
-         <AnimatePresence mode="wait">
-            {currentStep === 'FNOL' && (
-              <motion.div key="fnol" exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.2 }}>
-                <Step1_FNOL onNext={() => setCurrentStep('Triage')} />
-              </motion.div>
+      {/* Main Content */}
+      <main className="flex-1 bg-gray-50 dark:bg-gray-900 px-4 sm:px-6 lg:px-8 pt-8 pb-16 transition-colors duration-300">
+        <div className="max-w-7xl mx-auto">
+          
+          <Stepper currentStep={currentStep} />
+          
+          <div className="mt-8">
+            {currentStep === 1 && (
+              <Step1_FNOL onComplete={handleFnolComplete} />
             )}
-            {currentStep === 'Triage' && (
-              <motion.div key="triage" exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.2 }}>
-                <Step2_Triage onNext={() => setCurrentStep('Pre-Investigation')} />
-              </motion.div>
+            
+            {currentStep === 2 && fnolData && (
+              <Step2_Triage fnolData={fnolData} onComplete={handleTriageComplete} />
             )}
-            {currentStep === 'Pre-Investigation' && (
-              <motion.div key="investigation" exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.2 }}>
-                <Step3_Investigation />
-              </motion.div>
+
+            {currentStep === 3 && (
+              <>
+                <Step3_Investigation onInvoiceAnalyzed={setInvoiceAnalysis} />
+                {/* Continue Button */}
+                <div className="fixed bottom-6 right-6 z-50">
+                    <button 
+                      onClick={handleInvestigationComplete}
+                      className="btn-primary-anim px-8 py-3 rounded-xl bg-brand-600 text-white font-bold shadow-xl hover:shadow-brand-500/40 flex items-center"
+                    >
+                      Continue to Settlement
+                      <span className="ml-2">→</span>
+                    </button>
+                </div>
+              </>
             )}
-         </AnimatePresence>
+
+            {currentStep === 4 && (
+              <Step4_Settlement onComplete={handleRestart} invoiceData={invoiceAnalysis} />
+            )}
+          </div>
+
+        </div>
       </main>
+
+      {/* Global Floating Components */}
+      <FloatingChat />
+      <QuickActions step={currentStep} onAction={handleAction} />
 
     </div>
   );
-};
+}
 
 export default App;

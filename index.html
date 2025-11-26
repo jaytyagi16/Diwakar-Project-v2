@@ -5,16 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>ClaimsFlow AI</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script>
       tailwind.config = {
         darkMode: 'class',
         theme: {
           extend: {
             fontFamily: {
-              sans: ['Inter', 'sans-serif'],
+              sans: ['Inter', 'system-ui', 'sans-serif'],
             },
             colors: {
               brand: {
@@ -24,18 +21,28 @@
                 600: '#0284c7',
                 900: '#0c4a6e',
               }
+            },
+            animation: {
+              'fade-in': 'fadeIn 0.5s cubic-bezier(0.16, 1, 0.3, 1)',
+              'slide-up': 'slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1)',
+              'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+            },
+            keyframes: {
+              fadeIn: {
+                '0%': { opacity: '0' },
+                '100%': { opacity: '1' },
+              },
+              slideUp: {
+                '0%': { opacity: '0', transform: 'translateY(20px)' },
+                '100%': { opacity: '1', transform: 'translateY(0)' },
+              }
             }
-          }
-        }
+          },
+        },
       }
     </script>
     <style>
-      /* Smooth scrolling and base styles */
-      body {
-        -webkit-font-smoothing: antialiased;
-        -moz-osx-font-smoothing: grayscale;
-      }
-      /* Custom scrollbar for a cleaner look */
+      /* Custom Scrollbar */
       ::-webkit-scrollbar {
         width: 8px;
         height: 8px;
@@ -53,6 +60,157 @@
       .dark ::-webkit-scrollbar-thumb {
         background: #475569;
       }
+
+      /* --- PREMIUM MICRO-INTERACTIONS --- */
+
+      /* 1. Card Hover Effects */
+      .hover-card {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        will-change: transform, box-shadow;
+      }
+      .hover-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.08);
+      }
+      .dark .hover-card:hover {
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+        border-color: rgba(99, 102, 241, 0.2);
+      }
+
+      /* 2. Button Animations */
+      .btn-primary-anim {
+        transition: all 0.2s ease;
+        position: relative;
+        overflow: hidden;
+      }
+      .btn-primary-anim:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(14, 165, 233, 0.4);
+      }
+      .btn-primary-anim:active {
+        transform: translateY(0);
+        box-shadow: 0 2px 8px rgba(14, 165, 233, 0.3);
+      }
+
+      /* 3. Icon Animations */
+      .icon-hover {
+        transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+      }
+      .icon-hover:hover {
+        transform: scale(1.15);
+      }
+      .rotate-hover {
+        transition: transform 0.5s ease;
+      }
+      .rotate-hover:active {
+        transform: rotate(180deg);
+      }
+      .shake-hover:hover {
+        animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+      }
+      @keyframes shake {
+        10%, 90% { transform: translate3d(-1px, 0, 0); }
+        20%, 80% { transform: translate3d(2px, 0, 0); }
+        30%, 50%, 70% { transform: translate3d(-2px, 0, 0); }
+        40%, 60% { transform: translate3d(2px, 0, 0); }
+      }
+
+      /* 4. Progress Bars & Shimmer */
+      @keyframes shimmer {
+        0% { transform: translateX(-100%); }
+        100% { transform: translateX(100%); }
+      }
+      .shimmer-effect {
+        position: relative;
+        overflow: hidden;
+      }
+      .shimmer-effect::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(
+          90deg,
+          rgba(255,255,255,0) 0%,
+          rgba(255,255,255,0.3) 50%,
+          rgba(255,255,255,0) 100%
+        );
+        transform: translateX(-100%);
+        animation: shimmer 2s infinite;
+      }
+      @keyframes fillWidth {
+        from { width: 0; }
+        to { width: var(--target-width); }
+      }
+      .animate-fill-bar {
+        animation: fillWidth 1.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+      }
+
+      /* 5. Input Field Interactions */
+      .input-field-anim {
+        transition: all 0.2s ease;
+      }
+      .input-field-anim:hover {
+        border-color: #a5b4fc;
+      }
+      .input-field-anim:focus {
+        border-color: #6366f1;
+        box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+        transform: scale(1.005);
+      }
+
+      /* 6. Upload Zone */
+      .upload-zone-anim:hover {
+        border-color: #0ea5e9;
+        background-color: rgba(14, 165, 233, 0.03);
+      }
+      .upload-zone-anim:hover .upload-icon-bounce {
+        animation: bounce 0.6s ease infinite;
+      }
+      @keyframes bounce {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-6px); }
+      }
+
+      /* 7. List Items */
+      .list-item-hover {
+        transition: all 0.2s ease;
+      }
+      .list-item-hover:hover {
+        background-color: rgba(99, 102, 241, 0.04);
+        padding-left: 12px;
+      }
+
+      /* 8. Chat Animations */
+      @keyframes fabPulse {
+        0%, 100% { box-shadow: 0 4px 16px rgba(99, 102, 241, 0.3); }
+        50% { box-shadow: 0 4px 24px rgba(99, 102, 241, 0.6); }
+      }
+      .fab-pulse {
+        animation: fabPulse 3s ease-in-out infinite;
+      }
+      @keyframes slideInRight {
+        from { opacity: 0; transform: translateX(20px); }
+        to { opacity: 1; transform: translateX(0); }
+      }
+      @keyframes slideInLeft {
+        from { opacity: 0; transform: translateX(-20px); }
+        to { opacity: 1; transform: translateX(0); }
+      }
+      .msg-enter-right { animation: slideInRight 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+      .msg-enter-left { animation: slideInLeft 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+
+      /* 9. Page Transition */
+      .page-transition {
+        animation: fadeSlideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+      }
+      @keyframes fadeSlideUp {
+        from { opacity: 0; transform: translateY(15px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+
     </style>
   <script type="importmap">
 {
@@ -60,15 +218,13 @@
     "react/": "https://aistudiocdn.com/react@^19.2.0/",
     "react": "https://aistudiocdn.com/react@^19.2.0",
     "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
-    "lucide-react": "https://aistudiocdn.com/lucide-react@^0.554.0",
-    "framer-motion": "https://aistudiocdn.com/framer-motion@^12.23.24",
-    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.30.0"
+    "lucide-react": "https://aistudiocdn.com/lucide-react@^0.555.0"
   }
 }
 </script>
 <link rel="stylesheet" href="/index.css">
 </head>
-  <body class="bg-gray-50 dark:bg-gray-950 text-slate-900 dark:text-slate-100 transition-colors duration-300">
+  <body class="bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-300 antialiased overflow-x-hidden">
     <div id="root"></div>
   <script type="module" src="/index.tsx"></script>
 </body>
